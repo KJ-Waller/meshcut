@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmeshcut.a CMakeFiles/meshcut.dir/src/meshcut.cpp.o CMakeFiles/meshcut.dir/src/clipper.engine.cpp.o CMakeFiles/meshcut.dir/src/clipper.offset.cpp.o CMakeFiles/meshcut.dir/src/clipper.rectclip.cpp.o
+/usr/bin/ranlib libmeshcut.a
