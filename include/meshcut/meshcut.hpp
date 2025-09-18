@@ -105,6 +105,26 @@ namespace internal {
      * Triangulate polygon using Earcut algorithm
      */
     std::vector<Triangle> earcutTriangulate(const Polygon& polygon);
+    
+    /**
+     * Fast geometric triangle-polygon intersection using Sutherland-Hodgman clipping
+     */
+    Polygon fastTrianglePolygonIntersection(const Triangle& triangle, const Polygon& polygon);
+    
+    /**
+     * Check if point is inside (on positive side of) directed edge
+     */
+    bool isInsideEdge(const Point& point, const Point& edgeStart, const Point& edgeEnd);
+    
+    /**
+     * Compute intersection point of two lines
+     */
+    Point computeLineIntersection(const Point& p1, const Point& p2, const Point& p3, const Point& p4);
+    
+    /**
+     * Check if point has valid (non-NaN, non-infinite) coordinates
+     */
+    bool isValidPoint(const Point& point);
 }
 
 } // namespace meshcut

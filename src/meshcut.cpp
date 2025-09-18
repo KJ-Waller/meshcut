@@ -59,6 +59,52 @@ std::vector<Triangle> tessellate(const Polygon& polygon,
 
 namespace internal {
 
+// Bounding box structure for fast spatial filtering
+struct BoundingBox {
+    double min_x, min_y, max_x, max_y;
+    
+    BoundingBox(const Polygon& polygon) {
+        if (polygon.empty()) {
+            min_x = min_y = max_x = max_y = 0;
+            return;
+        }
+        
+        min_x = max_x = polygon[0].x;
+        min_y = max_y = polygon[0].y;
+        
+        for (const auto& pt : polygon) {
+            min_x = std::min(min_x, pt.x);
+            max_x = std::max(max_x, pt.x);
+            min_y = std::min(min_y, pt.y);
+            max_y = std::max(max_y, pt.y);
+        }
+    }
+    
+    BoundingBox(const Triangle& tri) {
+        min_x = std::min({tri.a.x, tri.b.x, tri.c.x});
+        max_x = std::max({tri.a.x, tri.b.x, tri.c.x});
+        min_y = std::min({tri.a.y, tri.b.y, tri.c.y});
+        max_y = std::max({tri.a.y, tri.b.y, tri.c.y});
+    }
+    
+    // Check if this bounding box is completely inside another
+    bool isCompletelyInside(const BoundingBox& other) const {
+        return min_x >= other.min_x && max_x <= other.max_x &&
+               min_y >= other.min_y && max_y <= other.max_y;
+    }
+    
+    // Check if this bounding box intersects another
+    bool intersects(const BoundingBox& other) const {
+        return !(max_x < other.min_x || min_x > other.max_x ||
+                 max_y < other.min_y || min_y > other.max_y);
+    }
+    
+    // Check if point is inside bounding box
+    bool contains(const Point& pt) const {
+        return pt.x >= min_x && pt.x <= max_x && pt.y >= min_y && pt.y <= max_y;
+    }
+};
+
 // Helper function to check if two points are approximately equal
 bool pointsEqual(const Point& a, const Point& b, double epsilon = 1e-9) {
     return std::abs(a.x - b.x) < epsilon && std::abs(a.y - b.y) < epsilon;
@@ -236,20 +282,33 @@ std::vector<bool> classifyTriangles(const std::vector<Triangle>& triangles,
                                    const Polygon& polygon) {
     std::vector<bool> isInterior(triangles.size(), false);
     
+    // Pre-compute polygon bounding box for fast rejection
+    BoundingBox polygon_bbox(polygon);
+    
     for (size_t i = 0; i < triangles.size(); ++i) {
         const auto& tri = triangles[i];
         
+        // Fast spatial filtering: if triangle bounding box is not completely 
+        // inside polygon bounding box, it can't be fully interior
+        BoundingBox tri_bbox(tri);
+        if (!tri_bbox.isCompletelyInside(polygon_bbox)) {
+            isInterior[i] = false;
+            continue; // Skip expensive point-in-polygon tests
+        }
+        
+        // If bounding boxes pass, do the expensive tests
         // Check if all vertices are inside polygon
-        // Use the original approach: ALL vertices must be inside
         bool allVerticesInside = pointInPolygon(tri.a, polygon) &&
                                pointInPolygon(tri.b, polygon) &&
                                pointInPolygon(tri.c, polygon);
         
-        // Check if triangle doesn't intersect polygon edges
-        bool noEdgeIntersection = !triangleIntersectsPolygonEdge(tri, polygon);
-        
-        // Triangle is fully interior if all vertices are inside AND no edge intersections
-        isInterior[i] = allVerticesInside && noEdgeIntersection;
+        // Only check edge intersection if vertices are inside (further optimization)
+        if (allVerticesInside) {
+            bool noEdgeIntersection = !triangleIntersectsPolygonEdge(tri, polygon);
+            isInterior[i] = noEdgeIntersection;
+        } else {
+            isInterior[i] = false;
+        }
     }
     
     return isInterior;
@@ -529,6 +588,9 @@ std::vector<bool> findPartiallyIntersectedTriangles(const std::vector<Triangle>&
                                                    const std::vector<bool>& isInterior) {
     std::vector<bool> isPartiallyIntersected(triangles.size(), false);
     
+    // Pre-compute polygon bounding box for fast rejection
+    BoundingBox polygon_bbox(polygon);
+    
     for (size_t i = 0; i < triangles.size(); ++i) {
         // Skip if triangle is fully interior
         if (isInterior[i]) {
@@ -537,23 +599,38 @@ std::vector<bool> findPartiallyIntersectedTriangles(const std::vector<Triangle>&
         
         const auto& tri = triangles[i];
         
+        // Fast spatial filtering: if triangle bounding box doesn't intersect
+        // polygon bounding box, there's no intersection at all
+        BoundingBox tri_bbox(tri);
+        if (!tri_bbox.intersects(polygon_bbox)) {
+            isPartiallyIntersected[i] = false;
+            continue; // Skip expensive geometric tests
+        }
+        
         // Check if triangle has any intersection with polygon
         // A triangle partially intersects if:
         // 1. At least one vertex is inside the polygon, OR
-        // 2. The triangle intersects with polygon edges
+        // 2. The triangle intersects with polygon edges, OR  
+        // 3. Any polygon vertex is inside the triangle
         
         bool hasVertexInside = pointInPolygon(tri.a, polygon) ||
                               pointInPolygon(tri.b, polygon) ||
                               pointInPolygon(tri.c, polygon);
         
-        bool intersectsEdges = triangleIntersectsPolygonEdge(tri, polygon);
+        // Only check edge intersection if we haven't found intersection yet
+        bool intersectsEdges = false;
+        if (!hasVertexInside) {
+            intersectsEdges = triangleIntersectsPolygonEdge(tri, polygon);
+        }
         
-        // Also check if any polygon vertex is inside the triangle
+        // Only check polygon vertices in triangle if still no intersection found
         bool hasPolygonVertexInside = false;
-        for (const auto& polyPoint : polygon) {
-            if (pointInTriangle(polyPoint, tri)) {
-                hasPolygonVertexInside = true;
-                break;
+        if (!hasVertexInside && !intersectsEdges) {
+            for (const auto& polyPoint : polygon) {
+                if (tri_bbox.contains(polyPoint) && pointInTriangle(polyPoint, tri)) {
+                    hasPolygonVertexInside = true;
+                    break;
+                }
             }
         }
         
@@ -564,49 +641,8 @@ std::vector<bool> findPartiallyIntersectedTriangles(const std::vector<Triangle>&
 }
 
 Polygon computeTrianglePolygonIntersection(const Triangle& triangle, const Polygon& polygon) {
-    // Convert triangle to Clipper2 format
-    Clipper2Lib::PathD trianglePath;
-    trianglePath.push_back(Clipper2Lib::PointD(triangle.a.x, triangle.a.y));
-    trianglePath.push_back(Clipper2Lib::PointD(triangle.b.x, triangle.b.y));
-    trianglePath.push_back(Clipper2Lib::PointD(triangle.c.x, triangle.c.y));
-    
-    Clipper2Lib::PathsD trianglePaths;
-    trianglePaths.push_back(trianglePath);
-    
-    // Convert polygon to Clipper2 format
-    Clipper2Lib::PathD polygonPath;
-    for (const auto& point : polygon) {
-        polygonPath.push_back(Clipper2Lib::PointD(point.x, point.y));
-    }
-    
-    Clipper2Lib::PathsD polygonPaths;
-    polygonPaths.push_back(polygonPath);
-    
-    // Compute intersection using Clipper2
-    Clipper2Lib::PathsD solution = Clipper2Lib::Intersect(trianglePaths, polygonPaths, Clipper2Lib::FillRule::NonZero);
-    
-    if (solution.empty()) {
-        return {}; // No intersection
-    }
-    
-    // Return the largest intersection polygon (in case there are multiple)
-    double maxArea = 0.0;
-    size_t maxIndex = 0;
-    for (size_t i = 0; i < solution.size(); ++i) {
-        double area = std::abs(Clipper2Lib::Area(solution[i]));
-        if (area > maxArea) {
-            maxArea = area;
-            maxIndex = i;
-        }
-    }
-    
-    // Convert back to our Polygon format
-    Polygon result;
-    for (const auto& point : solution[maxIndex]) {
-        result.push_back(Point(point.x, point.y));
-    }
-    
-    return result;
+    // Fast geometric triangle-polygon intersection using Sutherland-Hodgman clipping
+    return internal::fastTrianglePolygonIntersection(triangle, polygon);
 }
 
 // Helper function to check if a point is inside a triangle
@@ -626,6 +662,87 @@ bool pointInTriangle(const Point& point, const Triangle& triangle) {
     
     const double EPSILON = 1e-9;
     return (u >= -EPSILON) && (v >= -EPSILON) && (w >= -EPSILON);
+}
+
+Polygon fastTrianglePolygonIntersection(const Triangle& triangle, const Polygon& polygon) {
+    // Use Sutherland-Hodgman clipping algorithm
+    // Clip triangle against each edge of the polygon
+    
+    std::vector<Point> subject = {triangle.a, triangle.b, triangle.c};
+    
+    for (size_t i = 0; i < polygon.size(); ++i) {
+        if (subject.empty()) break;
+        
+        size_t j = (i + 1) % polygon.size();
+        Point clipStart = polygon[i];
+        Point clipEnd = polygon[j];
+        
+        std::vector<Point> clipped;
+        clipped.reserve(subject.size() + 1);
+        
+        if (!subject.empty()) {
+            Point prevVertex = subject.back();
+            
+            for (const Point& currVertex : subject) {
+                if (isInsideEdge(currVertex, clipStart, clipEnd)) {
+                    if (!isInsideEdge(prevVertex, clipStart, clipEnd)) {
+                        // Entering: add intersection point
+                        Point intersection = computeLineIntersection(prevVertex, currVertex, clipStart, clipEnd);
+                        if (isValidPoint(intersection)) {
+                            clipped.push_back(intersection);
+                        }
+                    }
+                    clipped.push_back(currVertex);
+                } else if (isInsideEdge(prevVertex, clipStart, clipEnd)) {
+                    // Exiting: add intersection point
+                    Point intersection = computeLineIntersection(prevVertex, currVertex, clipStart, clipEnd);
+                    if (isValidPoint(intersection)) {
+                        clipped.push_back(intersection);
+                    }
+                }
+                prevVertex = currVertex;
+            }
+        }
+        
+        subject = std::move(clipped);
+    }
+    
+    return subject;
+}
+
+bool isInsideEdge(const Point& point, const Point& edgeStart, const Point& edgeEnd) {
+    // Check if point is on the "inside" side of the directed edge
+    // Using cross product: (edgeEnd - edgeStart) × (point - edgeStart)
+    double dx1 = edgeEnd.x - edgeStart.x;
+    double dy1 = edgeEnd.y - edgeStart.y;
+    double dx2 = point.x - edgeStart.x;
+    double dy2 = point.y - edgeStart.y;
+    
+    double cross = dx1 * dy2 - dy1 * dx2;
+    return cross >= -1e-10; // Include points on the edge (with small tolerance)
+}
+
+Point computeLineIntersection(const Point& p1, const Point& p2, const Point& p3, const Point& p4) {
+    // Compute intersection of line (p1,p2) with line (p3,p4)
+    double x1 = p1.x, y1 = p1.y;
+    double x2 = p2.x, y2 = p2.y;
+    double x3 = p3.x, y3 = p3.y;
+    double x4 = p4.x, y4 = p4.y;
+    
+    double denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (std::abs(denom) < 1e-10) {
+        // Lines are parallel
+        return Point(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    }
+    
+    double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    
+    return Point(x1 + t * (x2 - x1), y1 + t * (y2 - y1));
+}
+
+bool isValidPoint(const Point& point) {
+    return !std::isnan(point.x) && !std::isnan(point.y) && 
+           !std::isinf(point.x) && !std::isinf(point.y);
 }
 
 } // namespace internal
