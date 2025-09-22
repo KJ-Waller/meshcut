@@ -194,6 +194,11 @@ public:
         return gridToWorld(p.x, p.y);
     }
     
+    // Get cell size for calculations
+    double getCellSize() const {
+        return cellSize;
+    }
+    
 private:
     double originX, originY, cellSize, invCellSize;
 };
@@ -656,6 +661,112 @@ private:
  */
 
 /**
+ * Batch grid rasterization system - rasterize entire polygon to grid in one pass
+ * Eliminates redundant point-in-polygon tests by pre-computing all grid point classifications
+ */
+class BatchGridRasterizer {
+private:
+    // Grid of point classifications: 0=out, 1=in, 2=boundary
+    std::vector<std::vector<int>> gridPoints;
+    int gridWidth, gridHeight;
+    CoordinateTransform transform;
+    
+public:
+    BatchGridRasterizer(int width, int height, const CoordinateTransform& trans) 
+        : gridWidth(width), gridHeight(height), transform(trans) {
+        // Allocate grid for (width+1) x (height+1) grid points
+        gridPoints.resize(gridHeight + 1);
+        for (int j = 0; j <= gridHeight; ++j) {
+            gridPoints[j].resize(gridWidth + 1, 0); // Initialize all as "out"
+        }
+    }
+    
+    /**
+     * Rasterize polygon to grid using scanline fill algorithm
+     * This replaces individual point-in-polygon tests with batch processing
+     */
+    void rasterizePolygon(const ScanlinePolygonTester& scanlineTester, int minI, int maxI, int minJ, int maxJ) {
+        // Process each row of grid points using scanline
+        for (int j = minJ; j <= maxJ + 1; ++j) { // +1 to include top edge of top cells
+            if (j < 0 || j > gridHeight) continue;
+            
+            // Get Y coordinate for this grid row
+            auto [leftX, rowY] = transform.gridToWorld(minI, j);
+            auto [rightX, _] = transform.gridToWorld(maxI + 1, j);
+            double cellSize = transform.getCellSize();
+            
+            // Use buffer pool for row results
+            auto& rowResults = g_bufferPool.getGridRowBuffer1();
+            
+            // Classify entire row of grid points in one scanline pass
+            scanlineTester.classifyGridRow(rowY, leftX, rightX, cellSize, rowResults);
+            
+            // Store results in our grid
+            for (int i = minI; i <= maxI + 1; ++i) { // +1 to include right edge of rightmost cells
+                if (i < 0 || i > gridWidth) continue;
+                int idx = i - minI;
+                if (idx >= 0 && idx < (int)rowResults.size()) {
+                    gridPoints[j][i] = rowResults[idx];
+                }
+            }
+        }
+    }
+    
+    /**
+     * Fast cell classification using pre-computed grid points
+     * Replaces the expensive 4-corner point-in-polygon tests
+     */
+    CellState classifyCellFast(int i, int j, const PolygonTester& spatialTester) {
+        // Check bounds
+        if (i < 0 || i >= gridWidth || j < 0 || j >= gridHeight) {
+            return FULL_OUT;
+        }
+        
+        // Get pre-computed classifications for 4 corners
+        int class0 = gridPoints[j][i];         // bottom-left
+        int class1 = gridPoints[j][i + 1];     // bottom-right  
+        int class2 = gridPoints[j + 1][i + 1]; // top-right
+        int class3 = gridPoints[j + 1][i];     // top-left
+        
+        // Count corners that are strictly inside (not on boundary)
+        int insideCount = (class0 == 1 ? 1 : 0) + (class1 == 1 ? 1 : 0) + 
+                          (class2 == 1 ? 1 : 0) + (class3 == 1 ? 1 : 0);
+        
+        // Count corners that are on boundary 
+        int boundaryCount = (class0 == 2 ? 1 : 0) + (class1 == 2 ? 1 : 0) + 
+                            (class2 == 2 ? 1 : 0) + (class3 == 2 ? 1 : 0);
+        
+        // All corners strictly inside = fully inside
+        if (insideCount == 4) {
+            return FULL_IN;
+        }
+        
+        // No corners inside or on boundary - check if polygon edges intersect cell
+        if (insideCount == 0 && boundaryCount == 0) {
+            // Use fast spatial-indexed intersection test
+            if (spatialTester.intersectsRectFast(i, j)) {
+                return BOUNDARY;
+            } else {
+                return FULL_OUT;
+            }
+        }
+        
+        // Any corners inside or on boundary, or mixed states = boundary
+        return BOUNDARY;
+    }
+    
+    /**
+     * Get pre-computed classification for a specific grid point
+     */
+    int getGridPointClassification(int i, int j) const {
+        if (i < 0 || i > gridWidth || j < 0 || j > gridHeight) {
+            return 0; // out of bounds = outside
+        }
+        return gridPoints[j][i];
+    }
+};
+
+/**
  * Optimized grid cell classification using scanline algorithm
  * Processes entire rows of cells efficiently using Y-bucketed edges
  */
@@ -1114,20 +1225,19 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     int minJ = std::max(0, minGrid.y);
     int maxJ = std::min(options.gridHeight - 1, maxGrid.y);
     
+    // Create batch grid rasterizer and pre-compute all grid point classifications
+    detail::BatchGridRasterizer gridRasterizer(options.gridWidth, options.gridHeight, transform);
+    gridRasterizer.rasterizePolygon(scanlineTester, minI, maxI, minJ, maxJ);
+    
     // Vertex deduplication map and counter
     std::unordered_map<detail::WorldPoint, N, detail::WorldPointHash> vertexMap;
     N nextVertexIndex = 0;
     
-    // Process grid cells row by row using scanline optimization
-    std::vector<detail::CellState> rowResults;
+    // Process grid cells using pre-computed rasterization results
     for (int j = minJ; j <= maxJ; j++) {
-        // Process entire row efficiently using scanline algorithm
-        detail::classifyGridRow(j, minI, maxI, scanlineTester, spatialTester, transform, rowResults);
-        
-        // Process each cell in the row based on classification
         for (int i = minI; i <= maxI; i++) {
-            int cellIdx = i - minI;
-            detail::CellState state = rowResults[cellIdx];
+            // Use fast cell classification based on pre-computed grid points
+            detail::CellState state = gridRasterizer.classifyCellFast(i, j, spatialTester);
             
             switch (state) {
                 case detail::FULL_IN:
