@@ -8,6 +8,7 @@
 #include <cassert>
 #include <tuple>
 #include <type_traits>
+#include <map>
 
 namespace meshcut {
 
@@ -175,7 +176,179 @@ struct PolygonEdge {
 };
 
 /**
- * Optimized point-in-polygon using precomputed edge list + spatial indexing
+ * Scanline-based point-in-polygon tester with Y-bucketed edge processing
+ */
+class ScanlinePolygonTester {
+private:
+    std::vector<PolygonEdge> edges;
+    
+    // Y-bucketed edge tables for scanline algorithm
+    struct ActiveEdge {
+        double x;           // Current X intersection
+        double deltaX;      // X increment per Y step
+        int edgeIndex;      // Original edge index
+        double maxY;        // Y coordinate where edge ends
+        
+        ActiveEdge(const PolygonEdge& edge, double y) : edgeIndex(-1) {
+            if (std::abs(edge.y2 - edge.y1) < 1e-10) {
+                // Horizontal edge - skip
+                deltaX = 0;
+                x = edge.x1;
+                maxY = edge.maxY;
+            } else {
+                deltaX = (edge.x2 - edge.x1) / (edge.y2 - edge.y1);
+                x = edge.getXAtY(y);
+                maxY = edge.maxY;
+            }
+        }
+        
+        void stepY(double dy) {
+            x += deltaX * dy;
+        }
+    };
+    
+    // Y-coordinate to edges that start at that Y
+    std::map<double, std::vector<int>> edgeStartTable;
+    double minY, maxY;
+    
+    // Cache for grid row processing
+    mutable std::vector<ActiveEdge> activeEdges;
+    mutable std::vector<double> intersections;
+    
+    void buildYBuckets() {
+        if (edges.empty()) return;
+        
+        minY = edges[0].minY;
+        maxY = edges[0].maxY;
+        
+        for (size_t i = 0; i < edges.size(); i++) {
+            const auto& edge = edges[i];
+            minY = std::min(minY, edge.minY);
+            maxY = std::max(maxY, edge.maxY);
+            
+            // Add edge to bucket at its minimum Y coordinate
+            edgeStartTable[edge.minY].push_back(i);
+        }
+    }
+    
+public:
+    ScanlinePolygonTester(const std::vector<double>& polygon) {
+        if (polygon.size() < 6) return;
+        
+        int n = polygon.size() / 2;
+        edges.reserve(n);
+        
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            double x1 = polygon[i * 2];
+            double y1 = polygon[i * 2 + 1];
+            double x2 = polygon[j * 2];  
+            double y2 = polygon[j * 2 + 1];
+            
+            // Skip degenerate edges
+            if (std::abs(x1 - x2) < 1e-10 && std::abs(y1 - y2) < 1e-10) continue;
+            
+            edges.emplace_back(x1, y1, x2, y2);
+        }
+        
+        buildYBuckets();
+    }
+    
+    // Process an entire row of grid points at Y coordinate
+    void classifyGridRow(double y, double leftX, double rightX, double stepX, std::vector<int>& results) const {
+        results.clear();
+        
+        if (y < minY || y > maxY) {
+            // Y is outside polygon bounds - all points are outside
+            int numPoints = static_cast<int>((rightX - leftX) / stepX) + 1;
+            results.resize(numPoints, 0);
+            return;
+        }
+        
+        // Update active edges for this Y coordinate
+        activeEdges.clear();
+        
+        // Add edges that start at or before this Y
+        for (const auto& bucket : edgeStartTable) {
+            if (bucket.first > y) break; // No more edges can be active
+            
+            for (int edgeIdx : bucket.second) {
+                const auto& edge = edges[edgeIdx];
+                
+                // Check if edge is active at this Y
+                if (edge.minY <= y && edge.maxY > y) {
+                    // Skip horizontal edges
+                    if (std::abs(edge.y2 - edge.y1) > 1e-10) {
+                        activeEdges.emplace_back(edge, y);
+                    }
+                }
+            }
+        }
+        
+        // Collect intersections and sort them
+        intersections.clear();
+        for (const auto& activeEdge : activeEdges) {
+            intersections.push_back(activeEdge.x);
+        }
+        std::sort(intersections.begin(), intersections.end());
+        
+        // Classify each point in the row
+        int numPoints = static_cast<int>((rightX - leftX) / stepX) + 1;
+        results.resize(numPoints);
+        
+        for (int i = 0; i < numPoints; i++) {
+            double x = leftX + i * stepX;
+            
+            // Count intersections to the right of point
+            int intersectionCount = 0;
+            for (double intersectX : intersections) {
+                if (intersectX > x) {
+                    intersectionCount++;
+                }
+            }
+            
+            results[i] = (intersectionCount % 2 == 1) ? 1 : 0;
+        }
+    }
+    
+    // Legacy single-point interface for boundary detection
+    bool isInside(double x, double y) const {
+        if (y < minY || y > maxY) return false;
+        
+        int intersections = 0;
+        for (const auto& edge : edges) {
+            if (edge.intersectsRay(x, y)) {
+                intersections++;
+            }
+        }
+        
+        return (intersections % 2) == 1;
+    }
+    
+    // Check if point is exactly on the polygon boundary
+    bool isOnBoundary(double x, double y, double tolerance = 1e-10) const {
+        for (const auto& edge : edges) {
+            if (edge.isPointOnEdge(x, y, tolerance)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Get point classification: 0 = outside, 1 = inside, 2 = on boundary
+    int classifyPoint(double x, double y, double tolerance = 1e-10) const {
+        // First check if point is on boundary
+        if (isOnBoundary(x, y, tolerance)) {
+            return 2; // On boundary
+        }
+        
+        // If not on boundary, use scanline for inside/outside
+        return isInside(x, y) ? 1 : 0;
+    }
+};
+
+/**
+ * Original spatial-indexed polygon tester (kept for spatial intersection queries)
  */
 class PolygonTester {
 private:
@@ -393,7 +566,109 @@ private:
  */
 
 /**
- * Classify a grid cell based on polygon intersection (optimized with spatial indexing)
+ * Optimized grid cell classification using scanline algorithm
+ * Processes entire rows of cells efficiently using Y-bucketed edges
+ */
+CellState classifyCell(int i, int j, const ScanlinePolygonTester& scanlineTester, const PolygonTester& spatialTester, const CoordinateTransform& transform) {
+    // Get the 4 corners of the cell in world coordinates
+    auto [x0, y0] = transform.gridToWorld(i, j);
+    auto [x1, y1] = transform.gridToWorld(i + 1, j);
+    auto [x2, y2] = transform.gridToWorld(i + 1, j + 1);
+    auto [x3, y3] = transform.gridToWorld(i, j + 1);
+    
+    // Test all 4 corners using boundary-aware classification
+    int class0 = scanlineTester.classifyPoint(x0, y0);  // 0=out, 1=in, 2=boundary
+    int class1 = scanlineTester.classifyPoint(x1, y1);
+    int class2 = scanlineTester.classifyPoint(x2, y2);
+    int class3 = scanlineTester.classifyPoint(x3, y3);
+    
+    // Count corners that are strictly inside (not on boundary)
+    int insideCount = (class0 == 1 ? 1 : 0) + (class1 == 1 ? 1 : 0) + 
+                      (class2 == 1 ? 1 : 0) + (class3 == 1 ? 1 : 0);
+    
+    // Count corners that are on boundary 
+    int boundaryCount = (class0 == 2 ? 1 : 0) + (class1 == 2 ? 1 : 0) + 
+                        (class2 == 2 ? 1 : 0) + (class3 == 2 ? 1 : 0);
+    
+    // All corners strictly inside = fully inside
+    if (insideCount == 4) {
+        return FULL_IN;
+    }
+    
+    // No corners inside or on boundary - check if polygon edges intersect cell
+    if (insideCount == 0 && boundaryCount == 0) {
+        // Use fast spatial-indexed intersection test from the original tester
+        if (spatialTester.intersectsRectFast(i, j)) {
+            return BOUNDARY;
+        } else {
+            return FULL_OUT;
+        }
+    }
+    
+    // Any corners inside or on boundary, or mixed states = boundary
+    return BOUNDARY;
+}
+
+/**
+ * Batch process an entire row of grid cells using scanline algorithm
+ * This is the core optimization - O(n+m) instead of O(n*m) for an entire row
+ */
+void classifyGridRow(int j, int minI, int maxI, const ScanlinePolygonTester& scanlineTester, 
+                    const PolygonTester& spatialTester, const CoordinateTransform& transform,
+                    std::vector<CellState>& rowResults) {
+    rowResults.clear();
+    rowResults.resize(maxI - minI + 1);
+    
+    // Process the bottom edge of all cells in this row (Y = j)
+    auto [leftX, bottomY] = transform.gridToWorld(minI, j);
+    auto [rightX, _] = transform.gridToWorld(maxI + 1, j);
+    double cellSize = (rightX - leftX) / (maxI - minI + 1);
+    
+    std::vector<int> bottomResults;
+    scanlineTester.classifyGridRow(bottomY, leftX, rightX, cellSize, bottomResults);
+    
+    // Process the top edge of all cells in this row (Y = j + 1)
+    auto [leftX2, topY] = transform.gridToWorld(minI, j + 1);
+    std::vector<int> topResults;
+    scanlineTester.classifyGridRow(topY, leftX2, rightX, cellSize, topResults);
+    
+    // Classify each cell based on its corners
+    for (int i = minI; i <= maxI; i++) {
+        int cellIdx = i - minI;
+        
+        // Get corner classifications (we have bottom and top edges, need to extrapolate for all 4 corners)
+        // Bottom-left and bottom-right from bottom edge
+        int class0 = cellIdx < bottomResults.size() ? bottomResults[cellIdx] : 0;      // bottom-left
+        int class1 = (cellIdx + 1) < bottomResults.size() ? bottomResults[cellIdx + 1] : 0;  // bottom-right
+        
+        // Top-left and top-right from top edge  
+        int class2 = (cellIdx + 1) < topResults.size() ? topResults[cellIdx + 1] : 0;    // top-right
+        int class3 = cellIdx < topResults.size() ? topResults[cellIdx] : 0;      // top-left
+        
+        // Count corners that are strictly inside
+        int insideCount = class0 + class1 + class2 + class3;
+        
+        // All corners inside = fully inside
+        if (insideCount == 4) {
+            rowResults[cellIdx] = FULL_IN;
+        }
+        // No corners inside - check spatial intersection
+        else if (insideCount == 0) {
+            if (spatialTester.intersectsRectFast(i, j)) {
+                rowResults[cellIdx] = BOUNDARY;
+            } else {
+                rowResults[cellIdx] = FULL_OUT;
+            }
+        }
+        // Mixed corners = boundary
+        else {
+            rowResults[cellIdx] = BOUNDARY;
+        }
+    }
+}
+
+/**
+ * Legacy single-cell classification (for compatibility)
  */
 CellState classifyCell(int i, int j, const PolygonTester& tester, const CoordinateTransform& transform) {
     // Get the 4 corners of the cell in world coordinates
@@ -681,10 +956,13 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     
     std::vector<N> indices;
     detail::CoordinateTransform transform(options);
-    detail::PolygonTester tester(polygon);
+    
+    // Create both testers: scanline for point classification, spatial for edge-cell intersection
+    detail::ScanlinePolygonTester scanlineTester(polygon);
+    detail::PolygonTester spatialTester(polygon);
     
     // Initialize spatial index for fast edge-cell intersection queries
-    tester.initSpatialIndex(options);
+    spatialTester.initSpatialIndex(options);
     
     // Compute polygon bounding box in grid coordinates
     double minX = polygon[0], maxX = polygon[0];
@@ -709,10 +987,16 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     std::unordered_map<detail::WorldPoint, N, detail::WorldPointHash> vertexMap;
     N nextVertexIndex = 0;
     
-    // Process each grid cell
+    // Process grid cells row by row using scanline optimization
+    std::vector<detail::CellState> rowResults;
     for (int j = minJ; j <= maxJ; j++) {
+        // Process entire row efficiently using scanline algorithm
+        detail::classifyGridRow(j, minI, maxI, scanlineTester, spatialTester, transform, rowResults);
+        
+        // Process each cell in the row based on classification
         for (int i = minI; i <= maxI; i++) {
-            detail::CellState state = detail::classifyCell(i, j, tester, transform);
+            int cellIdx = i - minI;
+            detail::CellState state = rowResults[cellIdx];
             
             switch (state) {
                 case detail::FULL_IN:
