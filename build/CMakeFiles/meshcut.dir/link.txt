@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmeshcut.a CMakeFiles/meshcut.dir/src/meshcut.cpp.o
-/usr/bin/ranlib libmeshcut.a

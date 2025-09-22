@@ -1,4 +1,0 @@
-basic_test 4 0.000857431
-advanced_test 3 0.001527
-visualization_test 2 0.00241141
----

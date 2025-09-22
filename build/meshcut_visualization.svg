@@ -55,8 +55,6 @@
 <polygon points="200,150 200,200 250,200"/>
 <polygon points="268.75,150 250,150 250,200"/>
 <polygon points="268.75,150 250,200 300,200"/>
-<polygon points="300,200 350,200 300,150"/>
-<polygon points="350,200 350,150 300,150"/>
 <polygon points="150,112.5 100,150 150,150"/>
 <polygon points="166.667,100 150,112.5 150,150"/>
 <polygon points="150,150 200,150 200,100"/>
@@ -94,9 +92,6 @@
 <circle cx="200" cy="150" r="2"/>
 <circle cx="250" cy="150" r="2"/>
 <circle cx="268.75" cy="150" r="2"/>
-<circle cx="350" cy="200" r="2"/>
-<circle cx="350" cy="150" r="2"/>
-<circle cx="300" cy="150" r="2"/>
 <circle cx="150" cy="112.5" r="2"/>
 <circle cx="200" cy="100" r="2"/>
 <circle cx="166.667" cy="100" r="2"/>
@@ -105,6 +100,6 @@
 <circle cx="200" cy="98.5714" r="2"/>
 <circle cx="180" cy="90" r="2"/>
 </g>
-<text x="0" y="430" font-family="Arial" font-size="12" fill="#666">Triangles: 43 | Vertices: 34 | Cells processed: 64</text>
+<text x="0" y="430" font-family="Arial" font-size="12" fill="#666">Triangles: 41 | Vertices: 31 | Cells processed: 64</text>
 </g>
 </svg>

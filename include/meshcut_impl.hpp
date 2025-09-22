@@ -142,6 +142,36 @@ struct PolygonEdge {
         double intersectX = getXAtY(y);
         return intersectX > x;
     }
+    
+    // Check if point is exactly on this edge (including endpoints)
+    bool isPointOnEdge(double x, double y, double tolerance = 1e-10) const {
+        // Check if point is exactly on an endpoint
+        if ((std::abs(x - x1) < tolerance && std::abs(y - y1) < tolerance) ||
+            (std::abs(x - x2) < tolerance && std::abs(y - y2) < tolerance)) {
+            return true;
+        }
+        
+        // Check if point is on the edge line segment
+        // First check if point is within bounding box
+        double minX = std::min(x1, x2), maxX = std::max(x1, x2);
+        if (x < minX - tolerance || x > maxX + tolerance || y < minY - tolerance || y > maxY + tolerance) {
+            return false;
+        }
+        
+        // Check if point lies on the line segment using cross product
+        double dx1 = x - x1, dy1 = y - y1;
+        double dx2 = x2 - x1, dy2 = y2 - y1;
+        
+        // Cross product should be near zero if point is on line
+        double cross = dx1 * dy2 - dy1 * dx2;
+        if (std::abs(cross) > tolerance) return false;
+        
+        // Check if point is within the segment bounds using dot product
+        double dot = dx1 * dx2 + dy1 * dy2;
+        double lenSq = dx2 * dx2 + dy2 * dy2;
+        
+        return dot >= -tolerance && dot <= lenSq + tolerance;
+    }
 };
 
 /**
@@ -231,6 +261,27 @@ public:
         }
         
         return (intersections % 2) == 1;
+    }
+    
+    // Check if point is exactly on the polygon boundary
+    bool isOnBoundary(double x, double y, double tolerance = 1e-10) const {
+        for (const auto& edge : edges) {
+            if (edge.isPointOnEdge(x, y, tolerance)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Get point classification: 0 = outside, 1 = inside, 2 = on boundary
+    int classifyPoint(double x, double y, double tolerance = 1e-10) const {
+        // First check if point is on boundary
+        if (isOnBoundary(x, y, tolerance)) {
+            return 2; // On boundary
+        }
+        
+        // If not on boundary, use ray casting for inside/outside
+        return isInside(x, y) ? 1 : 0;
     }
     
     // Fast spatial-index-based rectangle intersection test
@@ -351,19 +402,27 @@ CellState classifyCell(int i, int j, const PolygonTester& tester, const Coordina
     auto [x2, y2] = transform.gridToWorld(i + 1, j + 1);
     auto [x3, y3] = transform.gridToWorld(i, j + 1);
     
-    // Test all 4 corners
-    bool in0 = tester.isInside(x0, y0);
-    bool in1 = tester.isInside(x1, y1);
-    bool in2 = tester.isInside(x2, y2);
-    bool in3 = tester.isInside(x3, y3);
+    // Test all 4 corners using boundary-aware classification
+    int class0 = tester.classifyPoint(x0, y0);  // 0=out, 1=in, 2=boundary
+    int class1 = tester.classifyPoint(x1, y1);
+    int class2 = tester.classifyPoint(x2, y2);
+    int class3 = tester.classifyPoint(x3, y3);
     
-    // All corners inside = fully inside
-    if (in0 && in1 && in2 && in3) {
+    // Count corners that are strictly inside (not on boundary)
+    int insideCount = (class0 == 1 ? 1 : 0) + (class1 == 1 ? 1 : 0) + 
+                      (class2 == 1 ? 1 : 0) + (class3 == 1 ? 1 : 0);
+    
+    // Count corners that are on boundary 
+    int boundaryCount = (class0 == 2 ? 1 : 0) + (class1 == 2 ? 1 : 0) + 
+                        (class2 == 2 ? 1 : 0) + (class3 == 2 ? 1 : 0);
+    
+    // All corners strictly inside = fully inside
+    if (insideCount == 4) {
         return FULL_IN;
     }
     
-    // No corners inside - check if polygon edges intersect cell using spatial index
-    if (!in0 && !in1 && !in2 && !in3) {
+    // No corners inside or on boundary - check if polygon edges intersect cell
+    if (insideCount == 0 && boundaryCount == 0) {
         // Use fast spatial-indexed intersection test
         if (tester.intersectsRectFast(i, j)) {
             return BOUNDARY;
@@ -372,7 +431,7 @@ CellState classifyCell(int i, int j, const PolygonTester& tester, const Coordina
         }
     }
     
-    // Mixed corners = boundary
+    // Any corners inside or on boundary, or mixed states = boundary
     return BOUNDARY;
 }
 
