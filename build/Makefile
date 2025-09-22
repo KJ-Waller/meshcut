@@ -165,6 +165,32 @@ meshcut_visualization_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/build
 .PHONY : meshcut_visualization_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_performance_test
+
+# Build rule for target.
+meshcut_performance_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_performance_test
+.PHONY : meshcut_performance_test
+
+# fast build rule for target.
+meshcut_performance_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/build
+.PHONY : meshcut_performance_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_spatial_comparison_test
+
+# Build rule for target.
+meshcut_spatial_comparison_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_spatial_comparison_test
+.PHONY : meshcut_spatial_comparison_test
+
+# fast build rule for target.
+meshcut_spatial_comparison_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_spatial_comparison_test.dir/build.make CMakeFiles/meshcut_spatial_comparison_test.dir/build
+.PHONY : meshcut_spatial_comparison_test/fast
+
 test/test_advanced.o: test/test_advanced.cpp.o
 .PHONY : test/test_advanced.o
 
@@ -213,6 +239,54 @@ test/test_basic.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_test.dir/build.make CMakeFiles/meshcut_test.dir/test/test_basic.cpp.s
 .PHONY : test/test_basic.cpp.s
 
+test/test_performance.o: test/test_performance.cpp.o
+.PHONY : test/test_performance.o
+
+# target to build an object file
+test/test_performance.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/test/test_performance.cpp.o
+.PHONY : test/test_performance.cpp.o
+
+test/test_performance.i: test/test_performance.cpp.i
+.PHONY : test/test_performance.i
+
+# target to preprocess a source file
+test/test_performance.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/test/test_performance.cpp.i
+.PHONY : test/test_performance.cpp.i
+
+test/test_performance.s: test/test_performance.cpp.s
+.PHONY : test/test_performance.s
+
+# target to generate assembly for a file
+test/test_performance.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/test/test_performance.cpp.s
+.PHONY : test/test_performance.cpp.s
+
+test/test_spatial_comparison.o: test/test_spatial_comparison.cpp.o
+.PHONY : test/test_spatial_comparison.o
+
+# target to build an object file
+test/test_spatial_comparison.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_spatial_comparison_test.dir/build.make CMakeFiles/meshcut_spatial_comparison_test.dir/test/test_spatial_comparison.cpp.o
+.PHONY : test/test_spatial_comparison.cpp.o
+
+test/test_spatial_comparison.i: test/test_spatial_comparison.cpp.i
+.PHONY : test/test_spatial_comparison.i
+
+# target to preprocess a source file
+test/test_spatial_comparison.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_spatial_comparison_test.dir/build.make CMakeFiles/meshcut_spatial_comparison_test.dir/test/test_spatial_comparison.cpp.i
+.PHONY : test/test_spatial_comparison.cpp.i
+
+test/test_spatial_comparison.s: test/test_spatial_comparison.cpp.s
+.PHONY : test/test_spatial_comparison.s
+
+# target to generate assembly for a file
+test/test_spatial_comparison.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_spatial_comparison_test.dir/build.make CMakeFiles/meshcut_spatial_comparison_test.dir/test/test_spatial_comparison.cpp.s
+.PHONY : test/test_spatial_comparison.cpp.s
+
 test/test_visualization.o: test/test_visualization.cpp.o
 .PHONY : test/test_visualization.o
 
@@ -247,6 +321,8 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... meshcut_advanced_test"
+	@echo "... meshcut_performance_test"
+	@echo "... meshcut_spatial_comparison_test"
 	@echo "... meshcut_test"
 	@echo "... meshcut_visualization_test"
 	@echo "... test/test_advanced.o"
@@ -255,6 +331,12 @@ help:
 	@echo "... test/test_basic.o"
 	@echo "... test/test_basic.i"
 	@echo "... test/test_basic.s"
+	@echo "... test/test_performance.o"
+	@echo "... test/test_performance.i"
+	@echo "... test/test_performance.s"
+	@echo "... test/test_spatial_comparison.o"
+	@echo "... test/test_spatial_comparison.i"
+	@echo "... test/test_spatial_comparison.s"
 	@echo "... test/test_visualization.o"
 	@echo "... test/test_visualization.i"
 	@echo "... test/test_visualization.s"

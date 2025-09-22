@@ -40,12 +40,23 @@ add_executable(meshcut_visualization_test
     test/test_visualization.cpp
 )
 
+add_executable(meshcut_performance_test
+    test/test_performance.cpp
+)
+
+add_executable(meshcut_spatial_comparison_test
+    test/test_spatial_comparison.cpp
+)
+
 target_link_libraries(meshcut_test meshcut)
 target_link_libraries(meshcut_advanced_test meshcut)
 target_link_libraries(meshcut_visualization_test meshcut)
+target_link_libraries(meshcut_performance_test meshcut)
+target_link_libraries(meshcut_spatial_comparison_test meshcut)
 
 # Enable testing
 enable_testing()
 add_test(NAME basic_test COMMAND meshcut_test)
 add_test(NAME advanced_test COMMAND meshcut_advanced_test)
 add_test(NAME visualization_test COMMAND meshcut_visualization_test)
+add_test(NAME performance_test COMMAND meshcut_performance_test)

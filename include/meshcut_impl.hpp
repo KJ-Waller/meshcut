@@ -145,11 +145,55 @@ struct PolygonEdge {
 };
 
 /**
- * Optimized point-in-polygon using precomputed edge list
+ * Optimized point-in-polygon using precomputed edge list + spatial indexing
  */
 class PolygonTester {
 private:
     std::vector<PolygonEdge> edges;
+    
+    // Spatial index: grid cells -> list of edge indices that might intersect them
+    std::vector<std::vector<std::vector<int>>> spatialIndex;
+    double gridOriginX, gridOriginY, cellSize;
+    int gridWidth, gridHeight;
+    
+    // Build spatial index for fast edge-cell queries
+    void buildSpatialIndex(const MeshCutOptions& options) {
+        gridOriginX = options.gridOriginX;
+        gridOriginY = options.gridOriginY; 
+        cellSize = options.cellSize;
+        gridWidth = options.gridWidth;
+        gridHeight = options.gridHeight;
+        
+        // Initialize spatial index grid
+        spatialIndex.resize(gridHeight);
+        for (int j = 0; j < gridHeight; j++) {
+            spatialIndex[j].resize(gridWidth);
+        }
+        
+        // For each edge, add it to all cells it might intersect
+        for (size_t edgeIdx = 0; edgeIdx < edges.size(); edgeIdx++) {
+            const auto& edge = edges[edgeIdx];
+            
+            // Get edge bounding box in grid coordinates
+            double edgeMinX = std::min(edge.x1, edge.x2);
+            double edgeMaxX = std::max(edge.x1, edge.x2);
+            double edgeMinY = std::min(edge.y1, edge.y2);
+            double edgeMaxY = std::max(edge.y1, edge.y2);
+            
+            // Convert to grid cell indices (with some padding for safety)
+            int minI = std::max(0, static_cast<int>(std::floor((edgeMinX - gridOriginX) / cellSize)) - 1);
+            int maxI = std::min(gridWidth - 1, static_cast<int>(std::ceil((edgeMaxX - gridOriginX) / cellSize)) + 1);
+            int minJ = std::max(0, static_cast<int>(std::floor((edgeMinY - gridOriginY) / cellSize)) - 1);
+            int maxJ = std::min(gridHeight - 1, static_cast<int>(std::ceil((edgeMaxY - gridOriginY) / cellSize)) + 1);
+            
+            // Add edge to all potentially intersecting cells
+            for (int j = minJ; j <= maxJ; j++) {
+                for (int i = minI; i <= maxI; i++) {
+                    spatialIndex[j][i].push_back(edgeIdx);
+                }
+            }
+        }
+    }
     
 public:
     PolygonTester(const std::vector<double>& polygon) {
@@ -172,6 +216,11 @@ public:
         }
     }
     
+    // Initialize spatial index (call this once after construction)
+    void initSpatialIndex(const MeshCutOptions& options) {
+        buildSpatialIndex(options);
+    }
+    
     bool isInside(double x, double y) const {
         int intersections = 0;
         
@@ -184,7 +233,39 @@ public:
         return (intersections % 2) == 1;
     }
     
-    // Test if any polygon edges intersect the axis-aligned rectangle
+    // Fast spatial-index-based rectangle intersection test
+    bool intersectsRectFast(int cellI, int cellJ) const {
+        if (spatialIndex.empty() || cellJ < 0 || cellJ >= gridHeight || cellI < 0 || cellI >= gridWidth) {
+            return false; // Spatial index not built or cell out of bounds
+        }
+        
+        // Get cell bounds in world coordinates
+        double left = gridOriginX + cellI * cellSize;
+        double right = gridOriginX + (cellI + 1) * cellSize;
+        double bottom = gridOriginY + cellJ * cellSize;
+        double top = gridOriginY + (cellJ + 1) * cellSize;
+        
+        // Only test edges in spatial index for this cell
+        const auto& cellEdges = spatialIndex[cellJ][cellI];
+        for (int edgeIdx : cellEdges) {
+            const auto& edge = edges[edgeIdx];
+            
+            // Quick bounds check (redundant but fast)
+            double edgeMinX = std::min(edge.x1, edge.x2);
+            double edgeMaxX = std::max(edge.x1, edge.x2);
+            if (edgeMaxX < left || edgeMinX > right || edge.maxY < bottom || edge.minY > top) {
+                continue;
+            }
+            
+            // Precise intersection test
+            if (lineSegmentIntersectsRect(edge.x1, edge.y1, edge.x2, edge.y2, left, right, bottom, top)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Legacy method for backward compatibility (slower)
     bool intersectsRect(double left, double right, double bottom, double top) const {
         for (const auto& edge : edges) {
             // Quick bounds check
@@ -261,7 +342,7 @@ private:
  */
 
 /**
- * Classify a grid cell based on polygon intersection
+ * Classify a grid cell based on polygon intersection (optimized with spatial indexing)
  */
 CellState classifyCell(int i, int j, const PolygonTester& tester, const CoordinateTransform& transform) {
     // Get the 4 corners of the cell in world coordinates
@@ -281,10 +362,10 @@ CellState classifyCell(int i, int j, const PolygonTester& tester, const Coordina
         return FULL_IN;
     }
     
-    // No corners inside - check if polygon edges intersect cell
+    // No corners inside - check if polygon edges intersect cell using spatial index
     if (!in0 && !in1 && !in2 && !in3) {
-        // Use improved edge-cell intersection test
-        if (tester.intersectsRect(x0, x1, y0, y2)) {
+        // Use fast spatial-indexed intersection test
+        if (tester.intersectsRectFast(i, j)) {
             return BOUNDARY;
         } else {
             return FULL_OUT;
@@ -542,6 +623,9 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     std::vector<N> indices;
     detail::CoordinateTransform transform(options);
     detail::PolygonTester tester(polygon);
+    
+    // Initialize spatial index for fast edge-cell intersection queries
+    tester.initSpatialIndex(options);
     
     // Compute polygon bounding box in grid coordinates
     double minX = polygon[0], maxX = polygon[0];
