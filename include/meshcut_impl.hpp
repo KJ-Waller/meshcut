@@ -854,9 +854,8 @@ void emitGridTriangles(int i, int j, bool diagonalNE,
 }
 
 /**
- * Sutherland-Hodgman polygon clipping against axis-aligned rectangle
- * Clips input polygon to the rectangle [left, right] x [bottom, top]
- * Uses buffer pool to avoid allocations
+ * Advanced Sutherland-Hodgman polygon clipping against axis-aligned rectangle
+ * Optimized with early bounds checking, unified clipping logic, and ping-pong buffers
  */
 std::vector<std::pair<double, double>> clipPolygonToRect(
     const std::vector<double>& polygon, 
@@ -864,117 +863,153 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
     
     if (polygon.size() < 6) return {}; // Need at least 3 vertices
     
-    // Use buffer pool for all intermediate clipping stages
-    auto& points = g_bufferPool.getPointBuffer(0);
-    points.clear();
+    // Convert to point vector and compute bounding box for early exit
+    auto& inputBuffer = g_bufferPool.getPointBuffer(0);
+    inputBuffer.clear();
+    double minX = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max(); 
+    double maxY = std::numeric_limits<double>::lowest();
+    
     for (size_t i = 0; i < polygon.size(); i += 2) {
-        points.emplace_back(polygon[i], polygon[i + 1]);
+        double x = polygon[i];
+        double y = polygon[i + 1];
+        inputBuffer.emplace_back(x, y);
+        minX = std::min(minX, x);
+        maxX = std::max(maxX, x);
+        minY = std::min(minY, y);
+        maxY = std::max(maxY, y);
     }
     
-    // Clip against each edge of the rectangle using alternating buffers
-    // Order: left, right, bottom, top
-    auto clipLeft = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
+    // Early exit: if polygon bounding box doesn't overlap rectangle
+    if (maxX < left || minX > right || maxY < bottom || minY > top) {
+        return {}; // No intersection
+    }
+    
+    // Early exit: if polygon is entirely inside rectangle
+    if (minX >= left && maxX <= right && minY >= bottom && maxY <= top) {
+        return inputBuffer; // Return copy of input
+    }
+    
+    // Edge types for unified clipping function
+    enum class EdgeType { LEFT, RIGHT, BOTTOM, TOP };
+    
+    // Unified clipping function with optimized intersection calculations
+    auto clipAgainstEdge = [](const std::vector<std::pair<double, double>>& input,
+                             std::vector<std::pair<double, double>>& output,
+                             EdgeType edgeType, double edgeValue) {
         output.clear();
         if (input.empty()) return;
         
         auto prev = input.back();
         for (const auto& curr : input) {
-            if (curr.first >= left) { // Current point is inside
-                if (prev.first < left) { // Previous point was outside
-                    // Compute intersection with left edge
-                    double t = (left - prev.first) / (curr.first - prev.first);
-                    double y = prev.second + t * (curr.second - prev.second);
-                    output.emplace_back(left, y);
-                }
-                output.push_back(curr);
-            } else if (prev.first >= left) { // Current outside, previous inside
-                // Compute intersection with left edge
-                double t = (left - prev.first) / (curr.first - prev.first);
-                double y = prev.second + t * (curr.second - prev.second);
-                output.emplace_back(left, y);
+            bool currInside, prevInside;
+            double intersectionX, intersectionY;
+            
+            // Optimized inside/outside tests and intersection calculation per edge type
+            switch (edgeType) {
+                case EdgeType::LEFT:
+                    currInside = curr.first >= edgeValue;
+                    prevInside = prev.first >= edgeValue;
+                    if (currInside != prevInside) {
+                        // Optimized intersection: avoid division when possible
+                        double dx = curr.first - prev.first;
+                        if (std::abs(dx) > 1e-12) {
+                            double t = (edgeValue - prev.first) / dx;
+                            intersectionX = edgeValue;
+                            intersectionY = prev.second + t * (curr.second - prev.second);
+                        } else {
+                            intersectionX = edgeValue;
+                            intersectionY = prev.second;
+                        }
+                    }
+                    break;
+                    
+                case EdgeType::RIGHT:
+                    currInside = curr.first <= edgeValue;
+                    prevInside = prev.first <= edgeValue;
+                    if (currInside != prevInside) {
+                        double dx = curr.first - prev.first;
+                        if (std::abs(dx) > 1e-12) {
+                            double t = (edgeValue - prev.first) / dx;
+                            intersectionX = edgeValue;
+                            intersectionY = prev.second + t * (curr.second - prev.second);
+                        } else {
+                            intersectionX = edgeValue;
+                            intersectionY = prev.second;
+                        }
+                    }
+                    break;
+                    
+                case EdgeType::BOTTOM:
+                    currInside = curr.second >= edgeValue;
+                    prevInside = prev.second >= edgeValue;
+                    if (currInside != prevInside) {
+                        double dy = curr.second - prev.second;
+                        if (std::abs(dy) > 1e-12) {
+                            double t = (edgeValue - prev.second) / dy;
+                            intersectionX = prev.first + t * (curr.first - prev.first);
+                            intersectionY = edgeValue;
+                        } else {
+                            intersectionX = prev.first;
+                            intersectionY = edgeValue;
+                        }
+                    }
+                    break;
+                    
+                case EdgeType::TOP:
+                    currInside = curr.second <= edgeValue;
+                    prevInside = prev.second <= edgeValue;
+                    if (currInside != prevInside) {
+                        double dy = curr.second - prev.second;
+                        if (std::abs(dy) > 1e-12) {
+                            double t = (edgeValue - prev.second) / dy;
+                            intersectionX = prev.first + t * (curr.first - prev.first);
+                            intersectionY = edgeValue;
+                        } else {
+                            intersectionX = prev.first;
+                            intersectionY = edgeValue;
+                        }
+                    }
+                    break;
             }
+            
+            // Add intersection point if crossing from outside to inside
+            if (currInside && !prevInside) {
+                output.emplace_back(intersectionX, intersectionY);
+            }
+            
+            // Add current vertex if inside
+            if (currInside) {
+                output.push_back(curr);
+            }
+            
+            // Add intersection point if crossing from inside to outside
+            if (!currInside && prevInside) {
+                output.emplace_back(intersectionX, intersectionY);
+            }
+            
             prev = curr;
         }
     };
     
-    auto clipRight = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
-        output.clear();
-        if (input.empty()) return;
-        
-        auto prev = input.back();
-        for (const auto& curr : input) {
-            if (curr.first <= right) { // Current point is inside
-                if (prev.first > right) { // Previous point was outside
-                    double t = (right - prev.first) / (curr.first - prev.first);
-                    double y = prev.second + t * (curr.second - prev.second);
-                    output.emplace_back(right, y);
-                }
-                output.push_back(curr);
-            } else if (prev.first <= right) { // Current outside, previous inside
-                double t = (right - prev.first) / (curr.first - prev.first);
-                double y = prev.second + t * (curr.second - prev.second);
-                output.emplace_back(right, y);
-            }
-            prev = curr;
-        }
-    };
-    
-    auto clipBottom = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
-        output.clear();
-        if (input.empty()) return;
-        
-        auto prev = input.back();
-        for (const auto& curr : input) {
-            if (curr.second >= bottom) { // Current point is inside
-                if (prev.second < bottom) { // Previous point was outside
-                    double t = (bottom - prev.second) / (curr.second - prev.second);
-                    double x = prev.first + t * (curr.first - prev.first);
-                    output.emplace_back(x, bottom);
-                }
-                output.push_back(curr);
-            } else if (prev.second >= bottom) { // Current outside, previous inside
-                double t = (bottom - prev.second) / (curr.second - prev.second);
-                double x = prev.first + t * (curr.first - prev.first);
-                output.emplace_back(x, bottom);
-            }
-            prev = curr;
-        }
-    };
-    
-    auto clipTop = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
-        output.clear();
-        if (input.empty()) return;
-        
-        auto prev = input.back();
-        for (const auto& curr : input) {
-            if (curr.second <= top) { // Current point is inside
-                if (prev.second > top) { // Previous point was outside
-                    double t = (top - prev.second) / (curr.second - prev.second);
-                    double x = prev.first + t * (curr.first - prev.first);
-                    output.emplace_back(x, top);
-                }
-                output.push_back(curr);
-            } else if (prev.second <= top) { // Current outside, previous inside
-                double t = (top - prev.second) / (curr.second - prev.second);
-                double x = prev.first + t * (curr.first - prev.first);
-                output.emplace_back(x, top);
-            }
-            prev = curr;
-        }
-    };
-    
-    // Apply clipping stages sequentially using alternating buffers
+    // Ping-pong between two buffers instead of using 4 separate ones
     auto& buffer1 = g_bufferPool.getPointBuffer(1);
     auto& buffer2 = g_bufferPool.getPointBuffer(2);
-    auto& buffer3 = g_bufferPool.getPointBuffer(3);
-    auto& buffer4 = g_bufferPool.getPointBuffer(4);
     
-    clipLeft(points, buffer1);
-    clipRight(buffer1, buffer2);
-    clipBottom(buffer2, buffer3);
-    clipTop(buffer3, buffer4);
+    // Apply 4 clipping stages with ping-pong buffering
+    clipAgainstEdge(inputBuffer, buffer1, EdgeType::LEFT, left);
+    if (buffer1.empty()) return {};
     
-    return buffer4;  // Return copy of final result
+    clipAgainstEdge(buffer1, buffer2, EdgeType::RIGHT, right);
+    if (buffer2.empty()) return {};
+    
+    clipAgainstEdge(buffer2, buffer1, EdgeType::BOTTOM, bottom);
+    if (buffer1.empty()) return {};
+    
+    clipAgainstEdge(buffer1, buffer2, EdgeType::TOP, top);
+    
+    return buffer2;  // Return copy of final result
 }
 
 /**
