@@ -1,4 +1,7 @@
-Nice problem — doable and you can get earcut-level speed or better if you structure it right. Below is a focused, practical plan + data structures + micro-optimisations and a small C++ pseudocode/sketch you can copy-adapt. I’ll be direct: the trick is to **avoid running an expensive polygon triangulator on every triangle** — instead classify whole grid *cells* into in/out/partial, only clip & triangulate the partial cells. That reduces work to O(perimeter / cell\_size) clips instead of O(#triangles).
+Nice problem — doable and you can get earcut-level speed or better if you structure it right. Below is a focused, practical plan + data structures + * produce a ready-to-compile C++ implementation (with Sutherland–Hodgman + earcut headers + robust integer mapping),
+* or produce a micro-benchmark plan and profiler hotspots to tune (which lines to SIMD/parallelize).
+
+Which of those would you like next? (If you want code, I'll output a full C++ file you can compile with earcut.hpp and a small test.)o-optimisations and a small C++ pseudocode/sketch you can copy-adapt. I’ll be direct: the trick is to **avoid running an expensive polygon triangulator on every triangle** — instead classify whole grid *cells* into in/out/partial, only clip & triangulate the partial cells. That reduces work to O(perimeter / cell\_size) clips instead of O(#triangles).
 
 # High level algorithm (fast, practical)
 
