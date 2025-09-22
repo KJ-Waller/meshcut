@@ -36,10 +36,16 @@ add_executable(meshcut_advanced_test
     test/test_advanced.cpp
 )
 
+add_executable(meshcut_visualization_test
+    test/test_visualization.cpp
+)
+
 target_link_libraries(meshcut_test meshcut)
 target_link_libraries(meshcut_advanced_test meshcut)
+target_link_libraries(meshcut_visualization_test meshcut)
 
 # Enable testing
 enable_testing()
 add_test(NAME basic_test COMMAND meshcut_test)
 add_test(NAME advanced_test COMMAND meshcut_advanced_test)
+add_test(NAME visualization_test COMMAND meshcut_visualization_test)

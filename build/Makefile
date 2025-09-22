@@ -152,6 +152,19 @@ meshcut_advanced_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_advanced_test.dir/build.make CMakeFiles/meshcut_advanced_test.dir/build
 .PHONY : meshcut_advanced_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_visualization_test
+
+# Build rule for target.
+meshcut_visualization_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_visualization_test
+.PHONY : meshcut_visualization_test
+
+# fast build rule for target.
+meshcut_visualization_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/build
+.PHONY : meshcut_visualization_test/fast
+
 test/test_advanced.o: test/test_advanced.cpp.o
 .PHONY : test/test_advanced.o
 
@@ -200,6 +213,30 @@ test/test_basic.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_test.dir/build.make CMakeFiles/meshcut_test.dir/test/test_basic.cpp.s
 .PHONY : test/test_basic.cpp.s
 
+test/test_visualization.o: test/test_visualization.cpp.o
+.PHONY : test/test_visualization.o
+
+# target to build an object file
+test/test_visualization.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/test/test_visualization.cpp.o
+.PHONY : test/test_visualization.cpp.o
+
+test/test_visualization.i: test/test_visualization.cpp.i
+.PHONY : test/test_visualization.i
+
+# target to preprocess a source file
+test/test_visualization.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/test/test_visualization.cpp.i
+.PHONY : test/test_visualization.cpp.i
+
+test/test_visualization.s: test/test_visualization.cpp.s
+.PHONY : test/test_visualization.s
+
+# target to generate assembly for a file
+test/test_visualization.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/test/test_visualization.cpp.s
+.PHONY : test/test_visualization.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -211,12 +248,16 @@ help:
 	@echo "... test"
 	@echo "... meshcut_advanced_test"
 	@echo "... meshcut_test"
+	@echo "... meshcut_visualization_test"
 	@echo "... test/test_advanced.o"
 	@echo "... test/test_advanced.i"
 	@echo "... test/test_advanced.s"
 	@echo "... test/test_basic.o"
 	@echo "... test/test_basic.i"
 	@echo "... test/test_basic.s"
+	@echo "... test/test_visualization.o"
+	@echo "... test/test_visualization.i"
+	@echo "... test/test_visualization.s"
 .PHONY : help
 
 

@@ -7,6 +7,14 @@
 namespace meshcut {
 
 /**
+ * MeshCut Result - contains both vertices and triangle indices  
+ */
+struct MeshCutResult {
+    std::vector<double> vertices;    // [x,y, x,y, ...] vertex coordinates
+    std::vector<uint32_t> indices;   // triangle indices into vertices array
+};
+
+/**
  * MeshCut Options - specifies the grid for mesh-based triangulation
  */
 struct MeshCutOptions {
@@ -20,7 +28,25 @@ struct MeshCutOptions {
 };
 
 /**
- * MeshCut - Main triangulation function
+ * MeshCut - Main triangulation function (returns full result)
+ * 
+ * Compatible with earcut API but with added mesh constraints.
+ * Takes the same polygon format as earcut: vector of coordinate pairs.
+ * 
+ * @param polygon Vector of coordinates [x1,y1, x2,y2, ...] defining the polygon
+ * @param holes Vector of indices where holes start (earcut format)
+ * @param options Grid specification for mesh-constrained triangulation  
+ * @return MeshCutResult with vertices and triangle indices
+ */
+template <typename N = uint32_t>
+MeshCutResult meshcut_full(
+    const std::vector<double>& polygon,
+    const std::vector<N>& holes = {},
+    const MeshCutOptions& options = {}
+);
+
+/**
+ * MeshCut - Main triangulation function (indices only, earcut-compatible)
  * 
  * Compatible with earcut API but with added mesh constraints.
  * Takes the same polygon format as earcut: vector of coordinate pairs.
@@ -38,7 +64,20 @@ std::vector<N> meshcut(
 );
 
 /**
- * MeshCut with custom polygon format (compatible with earcut template usage)
+ * MeshCut with custom polygon format (full result)
+ * 
+ * @param polygon Custom polygon format (same as earcut - vector of rings)
+ * @param options Grid specification for mesh-constrained triangulation
+ * @return MeshCutResult with vertices and triangle indices
+ */
+template <typename N = uint32_t, typename Polygon>
+MeshCutResult meshcut_full(
+    const Polygon& polygon,
+    const MeshCutOptions& options = {}
+);
+
+/**
+ * MeshCut with custom polygon format (indices only, compatible with earcut template usage)
  * 
  * @param polygon Custom polygon format (same as earcut - vector of rings)
  * @param options Grid specification for mesh-constrained triangulation

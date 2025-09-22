@@ -524,10 +524,10 @@ void processBoundaryCell(int i, int j, const std::vector<double>& polygon,
 } // namespace detail
 
 /**
- * Main meshcut implementation
+ * Main meshcut implementation (full result with vertices)
  */
 template <typename N>
-std::vector<N> meshcut(const std::vector<double>& polygon, const std::vector<N>& holes, const MeshCutOptions& options) {
+MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector<N>& holes, const MeshCutOptions& options) {
     
     // Handle holes later - for now just process outer ring
     if (!holes.empty()) {
@@ -587,11 +587,74 @@ std::vector<N> meshcut(const std::vector<double>& polygon, const std::vector<N>&
         }
     }
     
+    // Build vertex array from vertex map
+    std::vector<double> vertices(nextVertexIndex * 2);
+    for (const auto& [worldPoint, index] : vertexMap) {
+        vertices[index * 2] = worldPoint.x;
+        vertices[index * 2 + 1] = worldPoint.y;
+    }
+    
+    // Convert indices to uint32_t if needed
+    std::vector<uint32_t> finalIndices;
+    finalIndices.reserve(indices.size());
+    for (N idx : indices) {
+        finalIndices.push_back(static_cast<uint32_t>(idx));
+    }
+    
+    return {std::move(vertices), std::move(finalIndices)};
+}
+
+/**
+ * Main meshcut implementation (indices only, earcut-compatible)
+ */
+template <typename N>
+std::vector<N> meshcut(const std::vector<double>& polygon, const std::vector<N>& holes, const MeshCutOptions& options) {
+    auto result = meshcut_full(polygon, holes, options);
+    
+    // Convert back to requested index type
+    std::vector<N> indices;
+    indices.reserve(result.indices.size());
+    for (uint32_t idx : result.indices) {
+        indices.push_back(static_cast<N>(idx));
+    }
     return indices;
 }
 
 /**
- * Template specialization for custom polygon types (earcut compatibility)
+ * Template specialization for custom polygon types (full result)
+ */
+template <typename N, typename Polygon>
+MeshCutResult meshcut_full(const Polygon& polygon, const MeshCutOptions& options) {
+    // Convert custom polygon format to vector<double> format
+    std::vector<double> coords;
+    
+    // Assume polygon is vector of vector of points (like earcut)
+    // Extract outer ring (first element)
+    if (!polygon.empty()) {
+        const auto& ring = polygon[0];
+        coords.reserve(ring.size() * 2);
+        
+        for (const auto& point : ring) {
+            // Handle different point types (array, pair, etc.)
+            if constexpr (std::is_same_v<std::decay_t<decltype(point)>, std::array<double, 2>>) {
+                coords.push_back(point[0]);
+                coords.push_back(point[1]);
+            } else {
+                // Use mapbox::util::nth for other types (earcut compatibility)
+                coords.push_back(mapbox::util::nth<0, decltype(point)>::get(point));
+                coords.push_back(mapbox::util::nth<1, decltype(point)>::get(point));
+            }
+        }
+    }
+    
+    // TODO: Handle holes (additional rings in polygon vector)
+    std::vector<N> holes; // Empty for now
+    
+    return meshcut_full<N>(coords, holes, options);
+}
+
+/**
+ * Template specialization for custom polygon types (indices only, earcut compatibility)
  */
 template <typename N, typename Polygon>
 std::vector<N> meshcut(const Polygon& polygon, const MeshCutOptions& options) {
@@ -626,5 +689,8 @@ std::vector<N> meshcut(const Polygon& polygon, const MeshCutOptions& options) {
 // Explicit template instantiations for common types
 template std::vector<uint32_t> meshcut(const std::vector<double>&, const std::vector<uint32_t>&, const MeshCutOptions&);
 template std::vector<uint16_t> meshcut(const std::vector<double>&, const std::vector<uint16_t>&, const MeshCutOptions&);
+
+template MeshCutResult meshcut_full<uint32_t>(const std::vector<double>&, const std::vector<uint32_t>&, const MeshCutOptions&);
+template MeshCutResult meshcut_full<uint16_t>(const std::vector<double>&, const std::vector<uint16_t>&, const MeshCutOptions&);
 
 } // namespace meshcut

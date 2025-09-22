@@ -1,5 +1,6 @@
 /home/kevin/meshcut/build/CMakeFiles/meshcut_test.dir
 /home/kevin/meshcut/build/CMakeFiles/meshcut_advanced_test.dir
+/home/kevin/meshcut/build/CMakeFiles/meshcut_visualization_test.dir
 /home/kevin/meshcut/build/CMakeFiles/test.dir
 /home/kevin/meshcut/build/CMakeFiles/edit_cache.dir
 /home/kevin/meshcut/build/CMakeFiles/rebuild_cache.dir
