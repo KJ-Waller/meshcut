@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+<rect width="100%" height="100%" fill="white"/>
+<g transform="translate(50,50)">
+<text x="200" y="-20" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">MeshCut Grid-Constrained Triangulation</text>
+<g stroke="#e0e0e0" stroke-width="0.5" fill="none">
+<line x1="0" y1="400" x2="0" y2="0"/>
+<line x1="50" y1="400" x2="50" y2="0"/>
+<line x1="100" y1="400" x2="100" y2="0"/>
+<line x1="150" y1="400" x2="150" y2="0"/>
+<line x1="200" y1="400" x2="200" y2="0"/>
+<line x1="250" y1="400" x2="250" y2="0"/>
+<line x1="300" y1="400" x2="300" y2="0"/>
+<line x1="350" y1="400" x2="350" y2="0"/>
+<line x1="400" y1="400" x2="400" y2="0"/>
+<line x1="0" y1="400" x2="400" y2="400"/>
+<line x1="0" y1="350" x2="400" y2="350"/>
+<line x1="0" y1="300" x2="400" y2="300"/>
+<line x1="0" y1="250" x2="400" y2="250"/>
+<line x1="0" y1="200" x2="400" y2="200"/>
+<line x1="0" y1="150" x2="400" y2="150"/>
+<line x1="0" y1="100" x2="400" y2="100"/>
+<line x1="0" y1="50" x2="400" y2="50"/>
+<line x1="0" y1="0" x2="400" y2="0"/>
+</g>
+<polygon points="120,290 280,300 300,200 250,120 180,90 100,150 80,220 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="#2196F3" fill-opacity="0.15" stroke="#2196F3" stroke-width="0.5">
+<polygon points="100,255 100,250 97.1429,250"/>
+<polygon points="150,291.875 150,250 100,250"/>
+<polygon points="100,250 100,255 120,290"/>
+<polygon points="120,290 150,291.875 100,250"/>
+<polygon points="200,295 200,250 150,250"/>
+<polygon points="150,250 150,291.875 200,295"/>
+<polygon points="250,298.125 250,250 200,250"/>
+<polygon points="200,250 200,295 250,298.125"/>
+<polygon points="280,300 290,250 250,250"/>
+<polygon points="250,250 250,298.125 280,300"/>
+<polygon points="85.7143,200 80,220 97.1429,250"/>
+<polygon points="97.1429,250 100,250 100,200"/>
+<polygon points="100,200 85.7143,200 97.1429,250"/>
+<polygon points="100,250 150,250 100,200"/>
+<polygon points="150,250 150,200 100,200"/>
+<polygon points="150,250 200,250 150,200"/>
+<polygon points="200,250 200,200 150,200"/>
+<polygon points="200,250 250,250 200,200"/>
+<polygon points="250,250 250,200 200,200"/>
+<polygon points="250,200 250,250 290,250"/>
+<polygon points="250,200 290,250 300,200"/>
+<polygon points="85.7143,200 100,200 100,150"/>
+<polygon points="100,200 150,200 150,150"/>
+<polygon points="100,200 150,150 100,150"/>
+<polygon points="150,200 200,200 150,150"/>
+<polygon points="200,200 200,150 150,150"/>
+<polygon points="200,200 250,200 200,150"/>
+<polygon points="250,200 250,150 200,150"/>
+<polygon points="268.75,150 250,150 250,200"/>
+<polygon points="268.75,150 250,200 300,200"/>
+<polygon points="150,112.5 100,150 150,150"/>
+<polygon points="166.667,100 150,112.5 150,150"/>
+<polygon points="150,150 200,150 200,100"/>
+<polygon points="200,100 166.667,100 150,150"/>
+<polygon points="203.333,100 200,100 200,150"/>
+<polygon points="203.333,100 200,150 250,150"/>
+<polygon points="203.333,100 250,150 250,120"/>
+<polygon points="268.75,150 250,120 250,150"/>
+<polygon points="180,90 166.667,100 200,100"/>
+<polygon points="200,100 200,98.5714 180,90"/>
+<polygon points="203.333,100 200,98.5714 200,100"/>
+</g>
+<g fill="#F44336" stroke="white" stroke-width="1">
+<circle cx="97.1429" cy="250" r="2"/>
+<circle cx="100" cy="255" r="2"/>
+<circle cx="100" cy="250" r="2"/>
+<circle cx="120" cy="290" r="2"/>
+<circle cx="150" cy="291.875" r="2"/>
+<circle cx="150" cy="250" r="2"/>
+<circle cx="200" cy="295" r="2"/>
+<circle cx="200" cy="250" r="2"/>
+<circle cx="250" cy="298.125" r="2"/>
+<circle cx="250" cy="250" r="2"/>
+<circle cx="280" cy="300" r="2"/>
+<circle cx="290" cy="250" r="2"/>
+<circle cx="100" cy="200" r="2"/>
+<circle cx="85.7143" cy="200" r="2"/>
+<circle cx="80" cy="220" r="2"/>
+<circle cx="150" cy="200" r="2"/>
+<circle cx="200" cy="200" r="2"/>
+<circle cx="250" cy="200" r="2"/>
+<circle cx="300" cy="200" r="2"/>
+<circle cx="100" cy="150" r="2"/>
+<circle cx="150" cy="150" r="2"/>
+<circle cx="200" cy="150" r="2"/>
+<circle cx="250" cy="150" r="2"/>
+<circle cx="268.75" cy="150" r="2"/>
+<circle cx="150" cy="112.5" r="2"/>
+<circle cx="200" cy="100" r="2"/>
+<circle cx="166.667" cy="100" r="2"/>
+<circle cx="250" cy="120" r="2"/>
+<circle cx="203.333" cy="100" r="2"/>
+<circle cx="200" cy="98.5714" r="2"/>
+<circle cx="180" cy="90" r="2"/>
+</g>
+<text x="0" y="430" font-family="Arial" font-size="12" fill="#666">Triangles: 41 | Vertices: 31 | Cells processed: 64</text>
+</g>
+</svg>

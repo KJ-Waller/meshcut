@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+<rect width="100%" height="100%" fill="white"/>
+<g transform="translate(50,50)">
+<text x="200" y="-20" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">Earcut Standard Triangulation</text>
+<polygon points="120,290 280,300 300,200 250,120 180,90 100,150 80,220 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="#FF9800" fill-opacity="0.15" stroke="#FF9800" stroke-width="0.5">
+<polygon points="100,150 80,220 120,290"/>
+<polygon points="120,290 280,300 300,200"/>
+<polygon points="300,200 250,120 180,90"/>
+<polygon points="180,90 100,150 120,290"/>
+<polygon points="120,290 300,200 180,90"/>
+</g>
+<g fill="#F44336" stroke="white" stroke-width="1">
+<circle cx="120" cy="290" r="2"/>
+<circle cx="280" cy="300" r="2"/>
+<circle cx="300" cy="200" r="2"/>
+<circle cx="250" cy="120" r="2"/>
+<circle cx="180" cy="90" r="2"/>
+<circle cx="100" cy="150" r="2"/>
+<circle cx="80" cy="220" r="2"/>
+</g>
+<text x="0" y="430" font-family="Arial" font-size="12" fill="#666">Triangles: 5 | Vertices: 7 | Cells processed: 0</text>
+</g>
+</svg>

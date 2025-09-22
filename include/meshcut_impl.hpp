@@ -122,7 +122,7 @@ struct WorldPoint {
  * Hash function for WorldPoint (for vertex deduplication)
  */
 struct WorldPointHash {
-    std::size_t operator()(const WorldPoint& p) const {
+    std::size_t operator()(const WorldPoint& p) const noexcept {
         // Quantize to avoid floating-point precision issues
         const double scale = 1e6;  // 1 micrometer precision
         long long ix = static_cast<long long>(std::round(p.x * scale));
@@ -162,6 +162,167 @@ enum CellState {
 };
 
 /**
+ * Integer coordinate system for fast arithmetic operations
+ * All coordinates are scaled to integer space for better performance
+ */
+class IntegerCoordinateTransform {
+public:
+    // Constructor from MeshCutOptions
+    IntegerCoordinateTransform(const MeshCutOptions& options)
+        : originX(options.gridOriginX)
+        , originY(options.gridOriginY) 
+        , cellSize(options.cellSize)
+        , gridWidth(options.gridWidth)
+        , gridHeight(options.gridHeight)
+    {
+        // Dynamic scale factor: ~100 integer units per grid cell regardless of grid size
+        // This provides good precision for any grid resolution
+        int maxDimension = std::max(gridWidth, gridHeight);
+        scaleFactor = maxDimension * 100; // 100 units per cell
+        invScaleFactor = 1.0 / scaleFactor;
+    }
+    
+    // Constructor with explicit grid dimensions and bounds
+    IntegerCoordinateTransform(int gw, int gh, double minX, double minY, double maxX, double maxY)
+        : originX(minX)
+        , originY(minY)
+        , gridWidth(gw)
+        , gridHeight(gh)
+    {
+        cellSize = (maxX - minX) / gw;
+        
+        // Dynamic scale factor: ~100 integer units per grid cell regardless of grid size
+        int maxDimension = std::max(gridWidth, gridHeight);
+        scaleFactor = maxDimension * 100; // 100 units per cell
+        invScaleFactor = 1.0 / scaleFactor;
+    }
+    
+    // Convert world coordinates to integer grid space
+    std::pair<int64_t, int64_t> worldToInteger(double x, double y) const {
+        // Scale relative to grid origin, then multiply by scale factor
+        double relativeX = (x - originX) / cellSize;
+        double relativeY = (y - originY) / cellSize;
+        
+        return {
+            static_cast<int64_t>(std::round(relativeX * scaleFactor)),
+            static_cast<int64_t>(std::round(relativeY * scaleFactor))
+        };
+    }
+    
+    // Convert integer coordinates back to world space
+    std::pair<double, double> integerToWorld(int64_t ix, int64_t iy) const {
+        double relativeX = ix * invScaleFactor;
+        double relativeY = iy * invScaleFactor;
+        
+        return {
+            originX + relativeX * cellSize,
+            originY + relativeY * cellSize
+        };
+    }
+    
+    // Get integer coordinates for grid cell corner
+    std::pair<int64_t, int64_t> gridCellToInteger(int gx, int gy) const {
+        return {
+            static_cast<int64_t>(gx) * scaleFactor,
+            static_cast<int64_t>(gy) * scaleFactor
+        };
+    }
+    
+    // Get scale factor for calculations
+    int getScaleFactor() const {
+        return scaleFactor;
+    }
+    
+    // Convert back to floating-point coordinate transform for compatibility
+    std::pair<double, double> gridToWorld(int gx, int gy) const {
+        return {
+            originX + gx * cellSize,
+            originY + gy * cellSize
+        };
+    }
+    
+private:
+    double originX, originY, cellSize;
+    int gridWidth, gridHeight;
+    int scaleFactor;
+    double invScaleFactor;
+};
+
+/**
+ * Integer-space edge representation for fast scanline processing
+ */
+struct IntegerPolygonEdge {
+    int64_t x1, y1, x2, y2;  // Edge endpoints in integer space
+    int64_t minY, maxY;      // Y bounds for quick culling
+    
+    IntegerPolygonEdge(int64_t x1_, int64_t y1_, int64_t x2_, int64_t y2_) 
+        : x1(x1_), y1(y1_), x2(x2_), y2(y2_)
+        , minY(std::min(y1_, y2_)), maxY(std::max(y1_, y2_)) {}
+    
+    // Compute X intersection at given Y using integer arithmetic
+    int64_t getXAtY(int64_t y) const {
+        if (y2 == y1) return x1; // Horizontal edge
+        
+        // Integer-based intersection calculation
+        // x = x1 + (x2 - x1) * (y - y1) / (y2 - y1)
+        int64_t numerator = (x2 - x1) * (y - y1);
+        int64_t denominator = (y2 - y1);
+        
+        return x1 + numerator / denominator;
+    }
+    
+    // Check if edge intersects horizontal ray at (x, y) going right
+    bool intersectsRay(int64_t x, int64_t y) const {
+        // Quick Y bounds check
+        if (y < minY || y > maxY) return false;
+        
+        // Handle edge cases - endpoint exactly on ray
+        if (y == y1) {
+            // Only count if other endpoint is above ray
+            return y2 > y;
+        }
+        if (y == y2) {
+            // Only count if other endpoint is above ray  
+            return y1 > y;
+        }
+        
+        // Compute intersection X using integer arithmetic
+        int64_t intersectX = getXAtY(y);
+        return intersectX > x;
+    }
+    
+    // Check if point is exactly on this edge (including endpoints)
+    bool isPointOnEdge(int64_t x, int64_t y, int64_t tolerance = 100) const {
+        // Check if point is exactly on an endpoint
+        if ((std::abs(x - x1) <= tolerance && std::abs(y - y1) <= tolerance) ||
+            (std::abs(x - x2) <= tolerance && std::abs(y - y2) <= tolerance)) {
+            return true;
+        }
+        
+        // Check if point is on the edge line segment
+        // First check if point is within bounding box
+        int64_t minX = std::min(x1, x2), maxX = std::max(x1, x2);
+        if (x < minX - tolerance || x > maxX + tolerance || y < minY - tolerance || y > maxY + tolerance) {
+            return false;
+        }
+        
+        // Check if point lies on the line segment using cross product
+        int64_t dx1 = x - x1, dy1 = y - y1;
+        int64_t dx2 = x2 - x1, dy2 = y2 - y1;
+        
+        // Cross product should be near zero if point is on line
+        int64_t cross = dx1 * dy2 - dy1 * dx2;
+        if (std::abs(cross) > tolerance * std::max(std::abs(dx2), std::abs(dy2))) return false;
+        
+        // Check if point is within the segment bounds using dot product
+        int64_t dot = dx1 * dx2 + dy1 * dy2;
+        int64_t lenSq = dx2 * dx2 + dy2 * dy2;
+        
+        return dot >= -tolerance && dot <= lenSq + tolerance;
+    }
+};
+
+/**
  * Coordinate system transformation functions
  */
 class CoordinateTransform {
@@ -197,6 +358,16 @@ public:
     // Get cell size for calculations
     double getCellSize() const {
         return cellSize;
+    }
+    
+    // Get coordinate system bounds (needed for integer coordinate transforms)
+    struct Bounds {
+        double minX, minY, maxX, maxY;
+    };
+    
+    Bounds getBounds() const {
+        // For now, return a reasonable default - could be enhanced to track actual bounds
+        return {originX, originY, originX + 1000 * cellSize, originY + 1000 * cellSize};
     }
     
 private:
@@ -268,6 +439,187 @@ struct PolygonEdge {
         double lenSq = dx2 * dx2 + dy2 * dy2;
         
         return dot >= -tolerance && dot <= lenSq + tolerance;
+    }
+};
+
+/**
+ * Integer-space scanline-based point-in-polygon tester
+ * All operations in integer arithmetic for maximum performance
+ */
+class IntegerScanlinePolygonTester {
+private:
+    std::vector<IntegerPolygonEdge> edges;
+    
+    // Y-bucketed edge tables for scanline algorithm
+    struct IntegerActiveEdge {
+        int64_t x;           // Current X intersection
+        int64_t deltaX;      // X increment per Y step (scaled)
+        int64_t deltaY;      // Y step size
+        int64_t maxY;        // Y coordinate where edge ends
+        
+        IntegerActiveEdge(const IntegerPolygonEdge& edge, int64_t y) {
+            if (edge.y2 == edge.y1) {
+                // Horizontal edge - skip
+                deltaX = 0;
+                deltaY = 1;
+                x = edge.x1;
+                maxY = edge.maxY;
+            } else {
+                deltaY = edge.y2 - edge.y1;
+                deltaX = edge.x2 - edge.x1;  // Will divide by deltaY when stepping
+                x = edge.getXAtY(y);
+                maxY = edge.maxY;
+            }
+        }
+        
+        void stepY(int64_t dy) {
+            if (deltaY != 0) {
+                x += (deltaX * dy) / deltaY;
+            }
+        }
+    };
+    
+    // Y-coordinate to edges that start at that Y
+    std::map<int64_t, std::vector<int>> edgeStartTable;
+    int64_t minY, maxY;
+    
+    // Cache for grid row processing
+    mutable std::vector<IntegerActiveEdge> activeEdges;
+    
+    void buildYBuckets() {
+        if (edges.empty()) return;
+        
+        minY = edges[0].minY;
+        maxY = edges[0].maxY;
+        
+        for (size_t i = 0; i < edges.size(); i++) {
+            const auto& edge = edges[i];
+            minY = std::min(minY, edge.minY);
+            maxY = std::max(maxY, edge.maxY);
+            
+            // Add edge to bucket at its minimum Y coordinate
+            edgeStartTable[edge.minY].push_back(i);
+        }
+    }
+    
+public:
+    IntegerScanlinePolygonTester(const std::vector<double>& polygon, const IntegerCoordinateTransform& transform) {
+        if (polygon.size() < 6) return;
+        
+        int n = polygon.size() / 2;
+        edges.reserve(n);
+        
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            
+            // Convert to integer coordinates
+            auto [ix1, iy1] = transform.worldToInteger(polygon[i * 2], polygon[i * 2 + 1]);
+            auto [ix2, iy2] = transform.worldToInteger(polygon[j * 2], polygon[j * 2 + 1]);
+            
+            // Skip degenerate edges
+            if (ix1 == ix2 && iy1 == iy2) continue;
+            
+            edges.emplace_back(ix1, iy1, ix2, iy2);
+        }
+        
+        buildYBuckets();
+    }
+    
+    // Process an entire row of grid points at Y coordinate (in integer space)
+    void classifyGridRow(int64_t intY, int64_t leftIntX, int64_t rightIntX, int64_t stepIntX, std::vector<int>& results) const {
+        results.clear();
+        
+        if (intY < minY || intY > maxY) {
+            // Y is outside polygon bounds - all points are outside
+            int numPoints = static_cast<int>((rightIntX - leftIntX) / stepIntX) + 1;
+            results.resize(numPoints, 0);
+            return;
+        }
+        
+        // Update active edges for this Y coordinate
+        activeEdges.clear();
+        
+        // Add edges that start at or before this Y
+        for (const auto& bucket : edgeStartTable) {
+            if (bucket.first > intY) break; // No more edges can be active
+            
+            for (int edgeIdx : bucket.second) {
+                const auto& edge = edges[edgeIdx];
+                
+                // Check if edge is active at this Y
+                if (edge.minY <= intY && edge.maxY > intY) {
+                    // Skip horizontal edges
+                    if (edge.y1 != edge.y2) {
+                        activeEdges.emplace_back(edge, intY);
+                    }
+                }
+            }
+        }
+        
+        // Collect intersection X coordinates using integer arithmetic
+        auto& intersectionBuffer = g_bufferPool.getIntersectionBuffer();
+        intersectionBuffer.clear();
+        for (const auto& activeEdge : activeEdges) {
+            intersectionBuffer.push_back(static_cast<double>(activeEdge.x));
+        }
+        std::sort(intersectionBuffer.begin(), intersectionBuffer.end());
+        
+        // Classify each point in the row using integer comparisons
+        int numPoints = static_cast<int>((rightIntX - leftIntX) / stepIntX) + 1;
+        results.resize(numPoints);
+        
+        for (int i = 0; i < numPoints; i++) {
+            int64_t intX = leftIntX + i * stepIntX;
+            
+            // Count intersections to the right of point using integer comparison
+            int intersectionCount = 0;
+            for (double intersectX : intersectionBuffer) {
+                if (static_cast<int64_t>(intersectX) > intX) {
+                    intersectionCount++;
+                }
+            }
+            
+            results[i] = (intersectionCount % 2 == 1) ? 1 : 0;
+        }
+    }
+    
+    // Legacy single-point interface (converts to integer internally)
+    bool isInside(double x, double y, const IntegerCoordinateTransform& transform) const {
+        auto [intX, intY] = transform.worldToInteger(x, y);
+        
+        if (intY < minY || intY > maxY) return false;
+        
+        int intersections = 0;
+        for (const auto& edge : edges) {
+            if (edge.intersectsRay(intX, intY)) {
+                intersections++;
+            }
+        }
+        
+        return (intersections % 2) == 1;
+    }
+    
+    // Check if point is exactly on the polygon boundary (integer space)
+    bool isOnBoundary(double x, double y, const IntegerCoordinateTransform& transform) const {
+        auto [intX, intY] = transform.worldToInteger(x, y);
+        
+        for (const auto& edge : edges) {
+            if (edge.isPointOnEdge(intX, intY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Get point classification: 0 = outside, 1 = inside, 2 = on boundary
+    int classifyPoint(double x, double y, const IntegerCoordinateTransform& transform) const {
+        // First check if point is on boundary
+        if (isOnBoundary(x, y, transform)) {
+            return 2; // On boundary
+        }
+        
+        // If not on boundary, use scanline for inside/outside
+        return isInside(x, y, transform) ? 1 : 0;
     }
 };
 
@@ -661,8 +1013,8 @@ private:
  */
 
 /**
- * Batch grid rasterization system - rasterize entire polygon to grid in one pass
- * Eliminates redundant point-in-polygon tests by pre-computing all grid point classifications
+ * Batch grid rasterization system using integer arithmetic for maximum performance
+ * Eliminates floating-point overhead by working entirely in integer coordinate space
  */
 class BatchGridRasterizer {
 private:
@@ -670,10 +1022,17 @@ private:
     std::vector<std::vector<int>> gridPoints;
     int gridWidth, gridHeight;
     CoordinateTransform transform;
+    std::unique_ptr<IntegerCoordinateTransform> intTransform;
     
 public:
     BatchGridRasterizer(int width, int height, const CoordinateTransform& trans) 
         : gridWidth(width), gridHeight(height), transform(trans) {
+        
+        // Create integer coordinate transform for this grid
+        auto bounds = transform.getBounds();
+        intTransform = std::make_unique<IntegerCoordinateTransform>(
+            width, height, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+        
         // Allocate grid for (width+1) x (height+1) grid points
         gridPoints.resize(gridHeight + 1);
         for (int j = 0; j <= gridHeight; ++j) {
@@ -682,24 +1041,31 @@ public:
     }
     
     /**
-     * Rasterize polygon to grid using scanline fill algorithm
+     * Rasterize polygon to grid using integer scanline fill algorithm
      * This replaces individual point-in-polygon tests with batch processing
      */
-    void rasterizePolygon(const ScanlinePolygonTester& scanlineTester, int minI, int maxI, int minJ, int maxJ) {
-        // Process each row of grid points using scanline
+    void rasterizePolygon(const IntegerScanlinePolygonTester& intScanlineTester, int minI, int maxI, int minJ, int maxJ) {
+        // Process each row of grid points using integer scanline
         for (int j = minJ; j <= maxJ + 1; ++j) { // +1 to include top edge of top cells
             if (j < 0 || j > gridHeight) continue;
             
-            // Get Y coordinate for this grid row
+            // Get integer coordinates for this grid row
             auto [leftX, rowY] = transform.gridToWorld(minI, j);
             auto [rightX, _] = transform.gridToWorld(maxI + 1, j);
+            
+            // Convert to integer coordinate space
+            auto [intLeftX, intRowY] = intTransform->worldToInteger(leftX, rowY);
+            auto [intRightX, intRowY2] = intTransform->worldToInteger(rightX, rowY);
+            
             double cellSize = transform.getCellSize();
+            auto [intStepX, intStepY] = intTransform->worldToInteger(cellSize, 0);
+            intStepX = intStepX - intTransform->worldToInteger(0, 0).first; // Get relative step
             
             // Use buffer pool for row results
             auto& rowResults = g_bufferPool.getGridRowBuffer1();
             
-            // Classify entire row of grid points in one scanline pass
-            scanlineTester.classifyGridRow(rowY, leftX, rightX, cellSize, rowResults);
+            // Classify entire row of grid points using integer arithmetic
+            intScanlineTester.classifyGridRow(intRowY, intLeftX, intRightX, intStepX, rowResults);
             
             // Store results in our grid
             for (int i = minI; i <= maxI + 1; ++i) { // +1 to include right edge of rightmost cells
@@ -713,7 +1079,7 @@ public:
     }
     
     /**
-     * Fast cell classification using pre-computed grid points
+     * Fast cell classification using pre-computed grid points with integer arithmetic
      * Replaces the expensive 4-corner point-in-polygon tests
      */
     CellState classifyCellFast(int i, int j, const PolygonTester& spatialTester) {
@@ -1199,8 +1565,12 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     std::vector<N> indices;
     detail::CoordinateTransform transform(options);
     
-    // Create both testers: scanline for point classification, spatial for edge-cell intersection
-    detail::ScanlinePolygonTester scanlineTester(polygon);
+    // Create both testers: integer scanline for point classification, spatial for edge-cell intersection
+    // Use integer coordinate transform for maximum performance
+    auto bounds = transform.getBounds();
+    detail::IntegerCoordinateTransform intTransform(options.gridWidth, options.gridHeight, 
+                                                   bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+    detail::IntegerScanlinePolygonTester intScanlineTester(polygon, intTransform);
     detail::PolygonTester spatialTester(polygon);
     
     // Initialize spatial index for fast edge-cell intersection queries
@@ -1225,9 +1595,9 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     int minJ = std::max(0, minGrid.y);
     int maxJ = std::min(options.gridHeight - 1, maxGrid.y);
     
-    // Create batch grid rasterizer and pre-compute all grid point classifications
+    // Create batch grid rasterizer and pre-compute all grid point classifications using integer arithmetic
     detail::BatchGridRasterizer gridRasterizer(options.gridWidth, options.gridHeight, transform);
-    gridRasterizer.rasterizePolygon(scanlineTester, minI, maxI, minJ, maxJ);
+    gridRasterizer.rasterizePolygon(intScanlineTester, minI, maxI, minJ, maxJ);
     
     // Vertex deduplication map and counter
     std::unordered_map<detail::WorldPoint, N, detail::WorldPointHash> vertexMap;
