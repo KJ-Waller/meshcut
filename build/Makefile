@@ -139,6 +139,43 @@ meshcut_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_test.dir/build.make CMakeFiles/meshcut_test.dir/build
 .PHONY : meshcut_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_advanced_test
+
+# Build rule for target.
+meshcut_advanced_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_advanced_test
+.PHONY : meshcut_advanced_test
+
+# fast build rule for target.
+meshcut_advanced_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_advanced_test.dir/build.make CMakeFiles/meshcut_advanced_test.dir/build
+.PHONY : meshcut_advanced_test/fast
+
+test/test_advanced.o: test/test_advanced.cpp.o
+.PHONY : test/test_advanced.o
+
+# target to build an object file
+test/test_advanced.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_advanced_test.dir/build.make CMakeFiles/meshcut_advanced_test.dir/test/test_advanced.cpp.o
+.PHONY : test/test_advanced.cpp.o
+
+test/test_advanced.i: test/test_advanced.cpp.i
+.PHONY : test/test_advanced.i
+
+# target to preprocess a source file
+test/test_advanced.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_advanced_test.dir/build.make CMakeFiles/meshcut_advanced_test.dir/test/test_advanced.cpp.i
+.PHONY : test/test_advanced.cpp.i
+
+test/test_advanced.s: test/test_advanced.cpp.s
+.PHONY : test/test_advanced.s
+
+# target to generate assembly for a file
+test/test_advanced.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_advanced_test.dir/build.make CMakeFiles/meshcut_advanced_test.dir/test/test_advanced.cpp.s
+.PHONY : test/test_advanced.cpp.s
+
 test/test_basic.o: test/test_basic.cpp.o
 .PHONY : test/test_basic.o
 
@@ -172,7 +209,11 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
+	@echo "... meshcut_advanced_test"
 	@echo "... meshcut_test"
+	@echo "... test/test_advanced.o"
+	@echo "... test/test_advanced.i"
+	@echo "... test/test_advanced.s"
 	@echo "... test/test_basic.o"
 	@echo "... test/test_basic.i"
 	@echo "... test/test_basic.s"

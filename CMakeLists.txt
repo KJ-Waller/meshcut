@@ -27,13 +27,19 @@ add_library(meshcut INTERFACE)
 target_include_directories(meshcut INTERFACE include)
 target_include_directories(meshcut INTERFACE third_party)
 
-# Test executable
+# Test executables
 add_executable(meshcut_test
     test/test_basic.cpp
 )
 
+add_executable(meshcut_advanced_test
+    test/test_advanced.cpp
+)
+
 target_link_libraries(meshcut_test meshcut)
+target_link_libraries(meshcut_advanced_test meshcut)
 
 # Enable testing
 enable_testing()
 add_test(NAME basic_test COMMAND meshcut_test)
+add_test(NAME advanced_test COMMAND meshcut_advanced_test)
