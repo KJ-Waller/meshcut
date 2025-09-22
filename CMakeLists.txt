@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 3.16)
+project(meshcut VERSION 1.0.0 LANGUAGES CXX)
+
+# Set C++17 standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Include directories
+include_directories(include)
+include_directories(third_party)
+
+# Add mapbox namespace include for earcut
+add_definitions(-DMAPBOX_EARCUT_HEADER_ONLY)
+
+# Compiler flags
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall")
+
+# Default to Release build
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# MeshCut library (header-only)
+add_library(meshcut INTERFACE)
+
+target_include_directories(meshcut INTERFACE include)
+target_include_directories(meshcut INTERFACE third_party)
+
+# Test executable
+add_executable(meshcut_test
+    test/test_basic.cpp
+)
+
+target_link_libraries(meshcut_test meshcut)
+
+# Enable testing
+enable_testing()
+add_test(NAME basic_test COMMAND meshcut_test)
