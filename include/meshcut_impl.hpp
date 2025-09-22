@@ -16,6 +16,97 @@ namespace meshcut {
 namespace detail {
 
 /**
+ * Thread-local buffer pool for reusing memory allocations
+ * Eliminates per-cell allocation overhead in boundary processing
+ */
+class BufferPool {
+private:
+    // Clipping operation buffers
+    mutable std::vector<std::pair<double, double>> pointBuffer1;
+    mutable std::vector<std::pair<double, double>> pointBuffer2;
+    mutable std::vector<std::pair<double, double>> pointBuffer3;
+    mutable std::vector<std::pair<double, double>> pointBuffer4;
+    mutable std::vector<std::pair<double, double>> pointBuffer5;
+    
+    // Earcut triangulation buffers
+    mutable std::vector<std::vector<std::pair<double, double>>> earcutPolygonBuffer;
+    mutable std::vector<uint32_t> triangleBuffer;
+    mutable std::vector<uint32_t> globalIndicesBuffer;
+    
+    // Grid processing buffers
+    mutable std::vector<int> gridRowBuffer1;
+    mutable std::vector<int> gridRowBuffer2;
+    mutable std::vector<double> intersectionBuffer;
+    
+public:
+    BufferPool() {
+        // Pre-allocate reasonable sizes to avoid small reallocations
+        pointBuffer1.reserve(32);
+        pointBuffer2.reserve(32);
+        pointBuffer3.reserve(32);
+        pointBuffer4.reserve(32);
+        pointBuffer5.reserve(32);
+        
+        earcutPolygonBuffer.reserve(2);
+        triangleBuffer.reserve(96);
+        globalIndicesBuffer.reserve(32);
+        
+        gridRowBuffer1.reserve(256);
+        gridRowBuffer2.reserve(256);
+        intersectionBuffer.reserve(64);
+    }
+    
+    // Get buffers for clipping operations (5 stages: input + 4 clipping stages)
+    std::vector<std::pair<double, double>>& getPointBuffer(int stage) const {
+        switch (stage) {
+            case 0: return pointBuffer1;
+            case 1: return pointBuffer2;
+            case 2: return pointBuffer3;
+            case 3: return pointBuffer4;
+            case 4: return pointBuffer5;
+            default: return pointBuffer1;
+        }
+    }
+    
+    // Get buffers for earcut triangulation
+    std::vector<std::vector<std::pair<double, double>>>& getEarcutPolygonBuffer() const {
+        earcutPolygonBuffer.clear();
+        return earcutPolygonBuffer;
+    }
+    
+    std::vector<uint32_t>& getTriangleBuffer() const {
+        triangleBuffer.clear();
+        return triangleBuffer;
+    }
+    
+    std::vector<uint32_t>& getGlobalIndicesBuffer() const {
+        globalIndicesBuffer.clear();
+        return globalIndicesBuffer;
+    }
+    
+    // Get buffers for grid row processing
+    std::vector<int>& getGridRowBuffer1() const {
+        gridRowBuffer1.clear();
+        return gridRowBuffer1;
+    }
+    
+    std::vector<int>& getGridRowBuffer2() const {
+        gridRowBuffer2.clear();
+        return gridRowBuffer2;
+    }
+    
+    std::vector<double>& getIntersectionBuffer() const {
+        intersectionBuffer.clear();
+        return intersectionBuffer;
+    }
+};
+
+/**
+ * Thread-local buffer pool instance
+ */
+thread_local BufferPool g_bufferPool;
+
+/**
  * World coordinate (for precise vertex deduplication)
  */
 struct WorldPoint {
@@ -211,9 +302,8 @@ private:
     std::map<double, std::vector<int>> edgeStartTable;
     double minY, maxY;
     
-    // Cache for grid row processing
+    // Cache for grid row processing - using buffer pool now
     mutable std::vector<ActiveEdge> activeEdges;
-    mutable std::vector<double> intersections;
     
     void buildYBuckets() {
         if (edges.empty()) return;
@@ -285,12 +375,12 @@ public:
             }
         }
         
-        // Collect intersections and sort them
-        intersections.clear();
+        // Use buffer pool for intersections to avoid allocation
+        auto& intersectionBuffer = g_bufferPool.getIntersectionBuffer();
         for (const auto& activeEdge : activeEdges) {
-            intersections.push_back(activeEdge.x);
+            intersectionBuffer.push_back(activeEdge.x);
         }
-        std::sort(intersections.begin(), intersections.end());
+        std::sort(intersectionBuffer.begin(), intersectionBuffer.end());
         
         // Classify each point in the row
         int numPoints = static_cast<int>((rightX - leftX) / stepX) + 1;
@@ -301,7 +391,7 @@ public:
             
             // Count intersections to the right of point
             int intersectionCount = 0;
-            for (double intersectX : intersections) {
+            for (double intersectX : intersectionBuffer) {
                 if (intersectX > x) {
                     intersectionCount++;
                 }
@@ -624,12 +714,13 @@ void classifyGridRow(int j, int minI, int maxI, const ScanlinePolygonTester& sca
     auto [rightX, _] = transform.gridToWorld(maxI + 1, j);
     double cellSize = (rightX - leftX) / (maxI - minI + 1);
     
-    std::vector<int> bottomResults;
+    // Use buffer pool to avoid allocations
+    auto& bottomResults = g_bufferPool.getGridRowBuffer1();
     scanlineTester.classifyGridRow(bottomY, leftX, rightX, cellSize, bottomResults);
     
     // Process the top edge of all cells in this row (Y = j + 1)
     auto [leftX2, topY] = transform.gridToWorld(minI, j + 1);
-    std::vector<int> topResults;
+    auto& topResults = g_bufferPool.getGridRowBuffer2();
     scanlineTester.classifyGridRow(topY, leftX2, rightX, cellSize, topResults);
     
     // Classify each cell based on its corners
@@ -638,12 +729,12 @@ void classifyGridRow(int j, int minI, int maxI, const ScanlinePolygonTester& sca
         
         // Get corner classifications (we have bottom and top edges, need to extrapolate for all 4 corners)
         // Bottom-left and bottom-right from bottom edge
-        int class0 = cellIdx < bottomResults.size() ? bottomResults[cellIdx] : 0;      // bottom-left
-        int class1 = (cellIdx + 1) < bottomResults.size() ? bottomResults[cellIdx + 1] : 0;  // bottom-right
+        int class0 = cellIdx < static_cast<int>(bottomResults.size()) ? bottomResults[cellIdx] : 0;      // bottom-left
+        int class1 = (cellIdx + 1) < static_cast<int>(bottomResults.size()) ? bottomResults[cellIdx + 1] : 0;  // bottom-right
         
         // Top-left and top-right from top edge  
-        int class2 = (cellIdx + 1) < topResults.size() ? topResults[cellIdx + 1] : 0;    // top-right
-        int class3 = cellIdx < topResults.size() ? topResults[cellIdx] : 0;      // top-left
+        int class2 = (cellIdx + 1) < static_cast<int>(topResults.size()) ? topResults[cellIdx + 1] : 0;    // top-right
+        int class3 = cellIdx < static_cast<int>(topResults.size()) ? topResults[cellIdx] : 0;      // top-left
         
         // Count corners that are strictly inside
         int insideCount = class0 + class1 + class2 + class3;
@@ -765,6 +856,7 @@ void emitGridTriangles(int i, int j, bool diagonalNE,
 /**
  * Sutherland-Hodgman polygon clipping against axis-aligned rectangle
  * Clips input polygon to the rectangle [left, right] x [bottom, top]
+ * Uses buffer pool to avoid allocations
  */
 std::vector<std::pair<double, double>> clipPolygonToRect(
     const std::vector<double>& polygon, 
@@ -772,17 +864,18 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
     
     if (polygon.size() < 6) return {}; // Need at least 3 vertices
     
-    // Convert to point pairs for easier processing
-    std::vector<std::pair<double, double>> points;
+    // Use buffer pool for all intermediate clipping stages
+    auto& points = g_bufferPool.getPointBuffer(0);
+    points.clear();
     for (size_t i = 0; i < polygon.size(); i += 2) {
         points.emplace_back(polygon[i], polygon[i + 1]);
     }
     
-    // Clip against each edge of the rectangle
+    // Clip against each edge of the rectangle using alternating buffers
     // Order: left, right, bottom, top
-    auto clipLeft = [&](const std::vector<std::pair<double, double>>& input) {
-        std::vector<std::pair<double, double>> output;
-        if (input.empty()) return output;
+    auto clipLeft = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
+        output.clear();
+        if (input.empty()) return;
         
         auto prev = input.back();
         for (const auto& curr : input) {
@@ -802,12 +895,11 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
             }
             prev = curr;
         }
-        return output;
     };
     
-    auto clipRight = [&](const std::vector<std::pair<double, double>>& input) {
-        std::vector<std::pair<double, double>> output;
-        if (input.empty()) return output;
+    auto clipRight = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
+        output.clear();
+        if (input.empty()) return;
         
         auto prev = input.back();
         for (const auto& curr : input) {
@@ -825,12 +917,11 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
             }
             prev = curr;
         }
-        return output;
     };
     
-    auto clipBottom = [&](const std::vector<std::pair<double, double>>& input) {
-        std::vector<std::pair<double, double>> output;
-        if (input.empty()) return output;
+    auto clipBottom = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
+        output.clear();
+        if (input.empty()) return;
         
         auto prev = input.back();
         for (const auto& curr : input) {
@@ -848,12 +939,11 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
             }
             prev = curr;
         }
-        return output;
     };
     
-    auto clipTop = [&](const std::vector<std::pair<double, double>>& input) {
-        std::vector<std::pair<double, double>> output;
-        if (input.empty()) return output;
+    auto clipTop = [&](const std::vector<std::pair<double, double>>& input, std::vector<std::pair<double, double>>& output) {
+        output.clear();
+        if (input.empty()) return;
         
         auto prev = input.back();
         for (const auto& curr : input) {
@@ -871,20 +961,25 @@ std::vector<std::pair<double, double>> clipPolygonToRect(
             }
             prev = curr;
         }
-        return output;
     };
     
-    // Apply clipping stages sequentially
-    auto clipped = clipLeft(points);
-    clipped = clipRight(clipped);
-    clipped = clipBottom(clipped);
-    clipped = clipTop(clipped);
+    // Apply clipping stages sequentially using alternating buffers
+    auto& buffer1 = g_bufferPool.getPointBuffer(1);
+    auto& buffer2 = g_bufferPool.getPointBuffer(2);
+    auto& buffer3 = g_bufferPool.getPointBuffer(3);
+    auto& buffer4 = g_bufferPool.getPointBuffer(4);
     
-    return clipped;
+    clipLeft(points, buffer1);
+    clipRight(buffer1, buffer2);
+    clipBottom(buffer2, buffer3);
+    clipTop(buffer3, buffer4);
+    
+    return buffer4;  // Return copy of final result
 }
 
 /**
  * Process a boundary cell - clip polygon and triangulate
+ * Uses buffer pool to avoid allocations
  */
 template<typename N>
 void processBoundaryCell(int i, int j, const std::vector<double>& polygon, 
@@ -897,22 +992,23 @@ void processBoundaryCell(int i, int j, const std::vector<double>& polygon,
     auto [left, bottom] = transform.gridToWorld(i, j);
     auto [right, top] = transform.gridToWorld(i + 1, j + 1);
     
-    // Clip polygon to cell rectangle
+    // Clip polygon to cell rectangle using buffer pool
     auto clippedPoints = clipPolygonToRect(polygon, left, right, bottom, top);
     
     if (clippedPoints.size() < 3) {
         return; // Clipped polygon is degenerate
     }
     
-    // Convert clipped polygon to earcut format
-    std::vector<std::vector<std::pair<double, double>>> earcutPolygon;
+    // Use buffer pool for earcut triangulation
+    auto& earcutPolygon = g_bufferPool.getEarcutPolygonBuffer();
     earcutPolygon.push_back(clippedPoints);
     
-    // Triangulate with earcut
-    std::vector<N> triangleIndices = mapbox::earcut<N>(earcutPolygon);
+    // Triangulate with earcut using buffer pool
+    auto& triangleIndices = g_bufferPool.getTriangleBuffer();
+    triangleIndices = mapbox::earcut<uint32_t>(earcutPolygon);
     
-    // Map earcut indices to global vertex indices with deduplication
-    std::vector<N> globalIndices;
+    // Use buffer pool for global vertex mapping
+    auto& globalIndices = g_bufferPool.getGlobalIndicesBuffer();
     globalIndices.reserve(clippedPoints.size());
     
     for (const auto& point : clippedPoints) {
@@ -921,18 +1017,18 @@ void processBoundaryCell(int i, int j, const std::vector<double>& polygon,
         // Check if we already have this vertex
         auto it = vertexMap.find(worldPoint);
         if (it != vertexMap.end()) {
-            globalIndices.push_back(it->second);
+            globalIndices.push_back(static_cast<uint32_t>(it->second));
         } else {
             // Create new vertex index
             N newIndex = nextVertexIndex++;
             vertexMap[worldPoint] = newIndex;
-            globalIndices.push_back(newIndex);
+            globalIndices.push_back(static_cast<uint32_t>(newIndex));
         }
     }
     
     // Add triangles to output using global indices
-    for (N triangleIndex : triangleIndices) {
-        indices.push_back(globalIndices[triangleIndex]);
+    for (uint32_t triangleIndex : triangleIndices) {
+        indices.push_back(static_cast<N>(globalIndices[triangleIndex]));
     }
 }
 
