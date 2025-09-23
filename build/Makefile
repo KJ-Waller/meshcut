@@ -191,6 +191,19 @@ meshcut_spatial_comparison_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_spatial_comparison_test.dir/build.make CMakeFiles/meshcut_spatial_comparison_test.dir/build
 .PHONY : meshcut_spatial_comparison_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_visualization_complex_test
+
+# Build rule for target.
+meshcut_visualization_complex_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_visualization_complex_test
+.PHONY : meshcut_visualization_complex_test
+
+# fast build rule for target.
+meshcut_visualization_complex_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_complex_test.dir/build.make CMakeFiles/meshcut_visualization_complex_test.dir/build
+.PHONY : meshcut_visualization_complex_test/fast
+
 test/test_advanced.o: test/test_advanced.cpp.o
 .PHONY : test/test_advanced.o
 
@@ -311,6 +324,30 @@ test/test_visualization.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_test.dir/build.make CMakeFiles/meshcut_visualization_test.dir/test/test_visualization.cpp.s
 .PHONY : test/test_visualization.cpp.s
 
+test/test_visualization_complex.o: test/test_visualization_complex.cpp.o
+.PHONY : test/test_visualization_complex.o
+
+# target to build an object file
+test/test_visualization_complex.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_complex_test.dir/build.make CMakeFiles/meshcut_visualization_complex_test.dir/test/test_visualization_complex.cpp.o
+.PHONY : test/test_visualization_complex.cpp.o
+
+test/test_visualization_complex.i: test/test_visualization_complex.cpp.i
+.PHONY : test/test_visualization_complex.i
+
+# target to preprocess a source file
+test/test_visualization_complex.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_complex_test.dir/build.make CMakeFiles/meshcut_visualization_complex_test.dir/test/test_visualization_complex.cpp.i
+.PHONY : test/test_visualization_complex.cpp.i
+
+test/test_visualization_complex.s: test/test_visualization_complex.cpp.s
+.PHONY : test/test_visualization_complex.s
+
+# target to generate assembly for a file
+test/test_visualization_complex.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_complex_test.dir/build.make CMakeFiles/meshcut_visualization_complex_test.dir/test/test_visualization_complex.cpp.s
+.PHONY : test/test_visualization_complex.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -324,6 +361,7 @@ help:
 	@echo "... meshcut_performance_test"
 	@echo "... meshcut_spatial_comparison_test"
 	@echo "... meshcut_test"
+	@echo "... meshcut_visualization_complex_test"
 	@echo "... meshcut_visualization_test"
 	@echo "... test/test_advanced.o"
 	@echo "... test/test_advanced.i"
@@ -340,6 +378,9 @@ help:
 	@echo "... test/test_visualization.o"
 	@echo "... test/test_visualization.i"
 	@echo "... test/test_visualization.s"
+	@echo "... test/test_visualization_complex.o"
+	@echo "... test/test_visualization_complex.i"
+	@echo "... test/test_visualization_complex.s"
 .PHONY : help
 
 
