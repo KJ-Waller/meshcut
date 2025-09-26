@@ -204,6 +204,19 @@ meshcut_visualization_complex_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_visualization_complex_test.dir/build.make CMakeFiles/meshcut_visualization_complex_test.dir/build
 .PHONY : meshcut_visualization_complex_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_real_polygon_extraction_test
+
+# Build rule for target.
+meshcut_real_polygon_extraction_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_real_polygon_extraction_test
+.PHONY : meshcut_real_polygon_extraction_test
+
+# fast build rule for target.
+meshcut_real_polygon_extraction_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_polygon_extraction_test.dir/build.make CMakeFiles/meshcut_real_polygon_extraction_test.dir/build
+.PHONY : meshcut_real_polygon_extraction_test/fast
+
 test/test_advanced.o: test/test_advanced.cpp.o
 .PHONY : test/test_advanced.o
 
@@ -275,6 +288,30 @@ test/test_performance.s: test/test_performance.cpp.s
 test/test_performance.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/test/test_performance.cpp.s
 .PHONY : test/test_performance.cpp.s
+
+test/test_real_polygon_extraction.o: test/test_real_polygon_extraction.cpp.o
+.PHONY : test/test_real_polygon_extraction.o
+
+# target to build an object file
+test/test_real_polygon_extraction.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_polygon_extraction_test.dir/build.make CMakeFiles/meshcut_real_polygon_extraction_test.dir/test/test_real_polygon_extraction.cpp.o
+.PHONY : test/test_real_polygon_extraction.cpp.o
+
+test/test_real_polygon_extraction.i: test/test_real_polygon_extraction.cpp.i
+.PHONY : test/test_real_polygon_extraction.i
+
+# target to preprocess a source file
+test/test_real_polygon_extraction.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_polygon_extraction_test.dir/build.make CMakeFiles/meshcut_real_polygon_extraction_test.dir/test/test_real_polygon_extraction.cpp.i
+.PHONY : test/test_real_polygon_extraction.cpp.i
+
+test/test_real_polygon_extraction.s: test/test_real_polygon_extraction.cpp.s
+.PHONY : test/test_real_polygon_extraction.s
+
+# target to generate assembly for a file
+test/test_real_polygon_extraction.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_polygon_extraction_test.dir/build.make CMakeFiles/meshcut_real_polygon_extraction_test.dir/test/test_real_polygon_extraction.cpp.s
+.PHONY : test/test_real_polygon_extraction.cpp.s
 
 test/test_spatial_comparison.o: test/test_spatial_comparison.cpp.o
 .PHONY : test/test_spatial_comparison.o
@@ -359,6 +396,7 @@ help:
 	@echo "... test"
 	@echo "... meshcut_advanced_test"
 	@echo "... meshcut_performance_test"
+	@echo "... meshcut_real_polygon_extraction_test"
 	@echo "... meshcut_spatial_comparison_test"
 	@echo "... meshcut_test"
 	@echo "... meshcut_visualization_complex_test"
@@ -372,6 +410,9 @@ help:
 	@echo "... test/test_performance.o"
 	@echo "... test/test_performance.i"
 	@echo "... test/test_performance.s"
+	@echo "... test/test_real_polygon_extraction.o"
+	@echo "... test/test_real_polygon_extraction.i"
+	@echo "... test/test_real_polygon_extraction.s"
 	@echo "... test/test_spatial_comparison.o"
 	@echo "... test/test_spatial_comparison.i"
 	@echo "... test/test_spatial_comparison.s"

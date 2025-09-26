@@ -20,6 +20,10 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Compiler/GNU.cmake"
+  "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake"
+  "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/FindPackageMessage.cmake"
+  "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/FindPkgConfig.cmake"
+  "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/FindZLIB.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake"
@@ -32,6 +36,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Platform/Linux.cmake"
   "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/Platform/UnixPaths.cmake"
+  "/usr/lib/android-sdk/cmake/3.31.6/share/cmake-3.31/Modules/SelectLibraryConfigurations.cmake"
   )
 
 # The corresponding makefile is:
@@ -53,4 +58,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/meshcut_performance_test.dir/DependInfo.cmake"
   "CMakeFiles/meshcut_spatial_comparison_test.dir/DependInfo.cmake"
   "CMakeFiles/meshcut_visualization_complex_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_real_polygon_extraction_test.dir/DependInfo.cmake"
   )

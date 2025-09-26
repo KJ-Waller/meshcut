@@ -52,12 +52,26 @@ add_executable(meshcut_visualization_complex_test
     test/test_visualization_complex.cpp
 )
 
+# Find curl and zlib for real vector tile tests
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CURL REQUIRED libcurl)
+find_package(ZLIB REQUIRED)
+
+add_executable(meshcut_real_polygon_extraction_test
+    test/test_real_polygon_extraction.cpp
+)
+
 target_link_libraries(meshcut_test meshcut)
 target_link_libraries(meshcut_advanced_test meshcut)
 target_link_libraries(meshcut_visualization_test meshcut)
 target_link_libraries(meshcut_performance_test meshcut)
 target_link_libraries(meshcut_spatial_comparison_test meshcut)
 target_link_libraries(meshcut_visualization_complex_test meshcut)
+target_link_libraries(meshcut_real_polygon_extraction_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+
+# Include curl headers for real polygon extraction test
+target_include_directories(meshcut_real_polygon_extraction_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_real_polygon_extraction_test PRIVATE ${CURL_CFLAGS_OTHER})
 
 # Enable testing
 enable_testing()

@@ -32,10 +32,34 @@ make meshcut_visualization_complex_test
 ./meshcut_visualization_complex_test
 ```
 
+### Real-world vector tile data:
+```bash
+cd build
+make meshcut_real_world_tile_test  
+./meshcut_real_world_tile_test
+```
+
+## Real-World Vector Tile Visualizations
+
+The `innsbruck_*_comparison.svg` files demonstrate MeshCut with **realistic GIS data**:
+
+- **`innsbruck_park_comparison.svg`** - Hofgarten Park (urban green space)
+- **`innsbruck_building_comparison.svg`** - Historic building complex  
+- **`innsbruck_water_comparison.svg`** - Inn River section
+- **`innsbruck_forest_comparison.svg`** - Alpine forest area
+- **`innsbruck_residential_comparison.svg`** - Urban residential district
+
+**Data characteristics:**
+- Based on OpenStreetMap data from Innsbruck, Austria
+- Web Mercator projection coordinates (EPSG:3857)
+- Zoom level 12 tile (~10km × 10km coverage)
+- 32×32 grid resolution (≈312m cell size)
+- Realistic polygon complexity and coordinate ranges
+
 ## About the Visualizations
 
-The complex comparison SVGs show **side-by-side comparisons** between:
+All comparison SVGs show **side-by-side comparisons** between:
 - **Left panel**: Earcut triangulation (sparse, boundary-only triangles)
 - **Right panel**: MeshCut triangulation (dense, grid-aligned triangles)
 
-These demonstrate how MeshCut provides significantly higher triangle density (30-190x more triangles) for better terrain sampling in 3D applications, while maintaining API compatibility with earcut.
+These demonstrate how MeshCut provides significantly higher triangle density (7-190x more triangles) for better terrain sampling in 3D applications, while maintaining API compatibility with earcut.
