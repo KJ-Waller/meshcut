@@ -16,6 +16,6 @@ def tile_to_latlon(z, x, y, center=True):
     return lat_deg, lon_deg
 
 # Example:
-z, x, y = 14, 8710, 5744
+z, x, y = 14, 8712, 5741
 lat, lon = tile_to_latlon(z, x, y)
 print(f"Tile center at z={z}, x={x}, y={y} → lat={lat:.6f}, lon={lon:.6f}")

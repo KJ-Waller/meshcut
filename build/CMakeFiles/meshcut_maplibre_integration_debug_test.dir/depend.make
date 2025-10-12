@@ -1,0 +1,2 @@
+# Empty dependencies file for meshcut_maplibre_integration_debug_test.
+# This may be replaced when dependencies are built.

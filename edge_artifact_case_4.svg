@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1350" height="800" viewBox="0 0 1350 800">
+<rect width="100%" height="100%" fill="white"/>
+<text x="350" y="50" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold">Earcut (MapLibre Default)</text>
+<g stroke="#ff0000" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.8">
+<line x1="77.2727" y1="100" x2="77.2727" y2="700"/>
+<line x1="622.727" y1="100" x2="622.727" y2="700"/>
+<line x1="50" y1="672.727" x2="650" y2="672.727"/>
+<line x1="50" y1="127.273" x2="650" y2="127.273"/>
+</g>
+<text x="77.2727" y="126.634" font-family="Arial" font-size="12" fill="red">Tile Edge (0)</text>
+<text x="622.727" y="126.634" font-family="Arial" font-size="12" fill="red">Tile Edge (4096)</text>
+<polygon points="343.608,406.392 410.192,472.976 476.776,406.392 622.727,379.759 543.359,299.858 410.192,339.808 343.608,406.392 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="none" stroke="#FF5722" stroke-width="0.5" opacity="0.7">
+<polygon points="410.192,339.808 343.608,406.392 410.192,472.976"/>
+<polygon points="476.776,406.392 622.727,379.759 543.359,299.858"/>
+<polygon points="543.359,299.858 410.192,339.808 410.192,472.976"/>
+<polygon points="410.192,472.976 476.776,406.392 543.359,299.858"/>
+</g>
+<text x="60" y="750" font-family="Arial" font-size="12" fill="#666">Earcut: 4 triangles</text>
+<text x="1025" y="50" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold">MeshCut (Terrain-Aware)</text>
+<g stroke="#ff0000" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.8">
+<line x1="752.273" y1="100" x2="752.273" y2="700"/>
+<line x1="1297.73" y1="100" x2="1297.73" y2="700"/>
+<line x1="725" y1="672.727" x2="1325" y2="672.727"/>
+<line x1="725" y1="127.273" x2="1325" y2="127.273"/>
+</g>
+<text x="752.273" y="126.634" font-family="Arial" font-size="12" fill="red">Tile Edge (0)</text>
+<text x="1297.73" y="126.634" font-family="Arial" font-size="12" fill="red">Tile Edge (4096)</text>
+<polygon points="1018.61,406.392 1085.19,472.976 1151.78,406.392 1297.73,379.759 1218.36,299.858 1085.19,339.808 1018.61,406.392 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="none" stroke="#2196F3" stroke-width="0.5" opacity="0.7">
+<polygon points="1085.19,472.976 1089.99,468.182 1080.4,468.182"/>
+<polygon points="1025,400 1018.61,406.392 1025,412.784"/>
+<polygon points="1025,412.784 1080.4,468.182 1089.99,468.182"/>
+<polygon points="1089.99,468.182 1093.18,464.986 1093.18,400"/>
+<polygon points="1025,412.784 1089.99,468.182 1093.18,400"/>
+<polygon points="1025,412.784 1093.18,400 1025,400"/>
+<polygon points="1161.36,404.642 1161.36,400 1093.18,400"/>
+<polygon points="1093.18,400 1093.18,464.986 1151.78,406.392"/>
+<polygon points="1151.78,406.392 1161.36,404.642 1093.18,400"/>
+<polygon points="1161.36,404.642 1186.8,400 1161.36,400"/>
+<polygon points="1085.19,339.808 1025,400 1093.18,400"/>
+<polygon points="1093.18,400 1093.18,337.411 1085.19,339.808"/>
+<polygon points="1111.83,331.818 1093.18,337.411 1093.18,400"/>
+<polygon points="1093.18,400 1161.36,400 1161.36,331.818"/>
+<polygon points="1161.36,331.818 1111.83,331.818 1093.18,400"/>
+<polygon points="1229.55,392.2 1229.55,331.818 1161.36,331.818"/>
+<polygon points="1161.36,331.818 1161.36,400 1186.8,400"/>
+<polygon points="1186.8,400 1229.55,392.2 1161.36,331.818"/>
+<polygon points="1297.73,379.759 1250.11,331.818 1229.55,331.818"/>
+<polygon points="1229.55,331.818 1229.55,392.2 1297.73,379.759"/>
+<polygon points="1161.36,316.957 1111.83,331.818 1161.36,331.818"/>
+<polygon points="1218.36,299.858 1161.36,316.957 1161.36,331.818"/>
+<polygon points="1161.36,331.818 1229.55,331.818 1229.55,311.119"/>
+<polygon points="1229.55,311.119 1218.36,299.858 1161.36,331.818"/>
+<polygon points="1250.11,331.818 1229.55,311.119 1229.55,331.818"/>
+</g>
+<text x="735" y="750" font-family="Arial" font-size="12" fill="#666">MeshCut: 25 triangles</text>
+</svg>

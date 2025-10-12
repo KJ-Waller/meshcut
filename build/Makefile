@@ -217,6 +217,84 @@ meshcut_real_polygon_extraction_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_polygon_extraction_test.dir/build.make CMakeFiles/meshcut_real_polygon_extraction_test.dir/build
 .PHONY : meshcut_real_polygon_extraction_test/fast
 
+#=============================================================================
+# Target rules for targets named meshcut_edge_crossing_test
+
+# Build rule for target.
+meshcut_edge_crossing_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_edge_crossing_test
+.PHONY : meshcut_edge_crossing_test
+
+# fast build rule for target.
+meshcut_edge_crossing_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_test.dir/build.make CMakeFiles/meshcut_edge_crossing_test.dir/build
+.PHONY : meshcut_edge_crossing_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_maplibre_integration_debug_test
+
+# Build rule for target.
+meshcut_maplibre_integration_debug_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_maplibre_integration_debug_test
+.PHONY : meshcut_maplibre_integration_debug_test
+
+# fast build rule for target.
+meshcut_maplibre_integration_debug_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_maplibre_integration_debug_test.dir/build.make CMakeFiles/meshcut_maplibre_integration_debug_test.dir/build
+.PHONY : meshcut_maplibre_integration_debug_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_edge_crossing_simulation_test
+
+# Build rule for target.
+meshcut_edge_crossing_simulation_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_edge_crossing_simulation_test
+.PHONY : meshcut_edge_crossing_simulation_test
+
+# fast build rule for target.
+meshcut_edge_crossing_simulation_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_simulation_test.dir/build.make CMakeFiles/meshcut_edge_crossing_simulation_test.dir/build
+.PHONY : meshcut_edge_crossing_simulation_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_real_coordinate_analysis_test
+
+# Build rule for target.
+meshcut_real_coordinate_analysis_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_real_coordinate_analysis_test
+.PHONY : meshcut_real_coordinate_analysis_test
+
+# fast build rule for target.
+meshcut_real_coordinate_analysis_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_coordinate_analysis_test.dir/build.make CMakeFiles/meshcut_real_coordinate_analysis_test.dir/build
+.PHONY : meshcut_real_coordinate_analysis_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_real_innsbruck_analysis_test
+
+# Build rule for target.
+meshcut_real_innsbruck_analysis_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_real_innsbruck_analysis_test
+.PHONY : meshcut_real_innsbruck_analysis_test
+
+# fast build rule for target.
+meshcut_real_innsbruck_analysis_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/build.make CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/build
+.PHONY : meshcut_real_innsbruck_analysis_test/fast
+
+#=============================================================================
+# Target rules for targets named meshcut_comprehensive_tile_suite_test
+
+# Build rule for target.
+meshcut_comprehensive_tile_suite_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 meshcut_comprehensive_tile_suite_test
+.PHONY : meshcut_comprehensive_tile_suite_test
+
+# fast build rule for target.
+meshcut_comprehensive_tile_suite_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/build.make CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/build
+.PHONY : meshcut_comprehensive_tile_suite_test/fast
+
 test/test_advanced.o: test/test_advanced.cpp.o
 .PHONY : test/test_advanced.o
 
@@ -265,6 +343,102 @@ test/test_basic.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_test.dir/build.make CMakeFiles/meshcut_test.dir/test/test_basic.cpp.s
 .PHONY : test/test_basic.cpp.s
 
+test/test_comprehensive_tile_suite.o: test/test_comprehensive_tile_suite.cpp.o
+.PHONY : test/test_comprehensive_tile_suite.o
+
+# target to build an object file
+test/test_comprehensive_tile_suite.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/build.make CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/test/test_comprehensive_tile_suite.cpp.o
+.PHONY : test/test_comprehensive_tile_suite.cpp.o
+
+test/test_comprehensive_tile_suite.i: test/test_comprehensive_tile_suite.cpp.i
+.PHONY : test/test_comprehensive_tile_suite.i
+
+# target to preprocess a source file
+test/test_comprehensive_tile_suite.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/build.make CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/test/test_comprehensive_tile_suite.cpp.i
+.PHONY : test/test_comprehensive_tile_suite.cpp.i
+
+test/test_comprehensive_tile_suite.s: test/test_comprehensive_tile_suite.cpp.s
+.PHONY : test/test_comprehensive_tile_suite.s
+
+# target to generate assembly for a file
+test/test_comprehensive_tile_suite.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/build.make CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/test/test_comprehensive_tile_suite.cpp.s
+.PHONY : test/test_comprehensive_tile_suite.cpp.s
+
+test/test_edge_crossing_polygons.o: test/test_edge_crossing_polygons.cpp.o
+.PHONY : test/test_edge_crossing_polygons.o
+
+# target to build an object file
+test/test_edge_crossing_polygons.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_test.dir/build.make CMakeFiles/meshcut_edge_crossing_test.dir/test/test_edge_crossing_polygons.cpp.o
+.PHONY : test/test_edge_crossing_polygons.cpp.o
+
+test/test_edge_crossing_polygons.i: test/test_edge_crossing_polygons.cpp.i
+.PHONY : test/test_edge_crossing_polygons.i
+
+# target to preprocess a source file
+test/test_edge_crossing_polygons.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_test.dir/build.make CMakeFiles/meshcut_edge_crossing_test.dir/test/test_edge_crossing_polygons.cpp.i
+.PHONY : test/test_edge_crossing_polygons.cpp.i
+
+test/test_edge_crossing_polygons.s: test/test_edge_crossing_polygons.cpp.s
+.PHONY : test/test_edge_crossing_polygons.s
+
+# target to generate assembly for a file
+test/test_edge_crossing_polygons.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_test.dir/build.make CMakeFiles/meshcut_edge_crossing_test.dir/test/test_edge_crossing_polygons.cpp.s
+.PHONY : test/test_edge_crossing_polygons.cpp.s
+
+test/test_edge_crossing_simulation.o: test/test_edge_crossing_simulation.cpp.o
+.PHONY : test/test_edge_crossing_simulation.o
+
+# target to build an object file
+test/test_edge_crossing_simulation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_simulation_test.dir/build.make CMakeFiles/meshcut_edge_crossing_simulation_test.dir/test/test_edge_crossing_simulation.cpp.o
+.PHONY : test/test_edge_crossing_simulation.cpp.o
+
+test/test_edge_crossing_simulation.i: test/test_edge_crossing_simulation.cpp.i
+.PHONY : test/test_edge_crossing_simulation.i
+
+# target to preprocess a source file
+test/test_edge_crossing_simulation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_simulation_test.dir/build.make CMakeFiles/meshcut_edge_crossing_simulation_test.dir/test/test_edge_crossing_simulation.cpp.i
+.PHONY : test/test_edge_crossing_simulation.cpp.i
+
+test/test_edge_crossing_simulation.s: test/test_edge_crossing_simulation.cpp.s
+.PHONY : test/test_edge_crossing_simulation.s
+
+# target to generate assembly for a file
+test/test_edge_crossing_simulation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_edge_crossing_simulation_test.dir/build.make CMakeFiles/meshcut_edge_crossing_simulation_test.dir/test/test_edge_crossing_simulation.cpp.s
+.PHONY : test/test_edge_crossing_simulation.cpp.s
+
+test/test_maplibre_integration_debug.o: test/test_maplibre_integration_debug.cpp.o
+.PHONY : test/test_maplibre_integration_debug.o
+
+# target to build an object file
+test/test_maplibre_integration_debug.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_maplibre_integration_debug_test.dir/build.make CMakeFiles/meshcut_maplibre_integration_debug_test.dir/test/test_maplibre_integration_debug.cpp.o
+.PHONY : test/test_maplibre_integration_debug.cpp.o
+
+test/test_maplibre_integration_debug.i: test/test_maplibre_integration_debug.cpp.i
+.PHONY : test/test_maplibre_integration_debug.i
+
+# target to preprocess a source file
+test/test_maplibre_integration_debug.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_maplibre_integration_debug_test.dir/build.make CMakeFiles/meshcut_maplibre_integration_debug_test.dir/test/test_maplibre_integration_debug.cpp.i
+.PHONY : test/test_maplibre_integration_debug.cpp.i
+
+test/test_maplibre_integration_debug.s: test/test_maplibre_integration_debug.cpp.s
+.PHONY : test/test_maplibre_integration_debug.s
+
+# target to generate assembly for a file
+test/test_maplibre_integration_debug.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_maplibre_integration_debug_test.dir/build.make CMakeFiles/meshcut_maplibre_integration_debug_test.dir/test/test_maplibre_integration_debug.cpp.s
+.PHONY : test/test_maplibre_integration_debug.cpp.s
+
 test/test_performance.o: test/test_performance.cpp.o
 .PHONY : test/test_performance.o
 
@@ -288,6 +462,54 @@ test/test_performance.s: test/test_performance.cpp.s
 test/test_performance.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_performance_test.dir/build.make CMakeFiles/meshcut_performance_test.dir/test/test_performance.cpp.s
 .PHONY : test/test_performance.cpp.s
+
+test/test_real_coordinate_analysis.o: test/test_real_coordinate_analysis.cpp.o
+.PHONY : test/test_real_coordinate_analysis.o
+
+# target to build an object file
+test/test_real_coordinate_analysis.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_coordinate_analysis_test.dir/build.make CMakeFiles/meshcut_real_coordinate_analysis_test.dir/test/test_real_coordinate_analysis.cpp.o
+.PHONY : test/test_real_coordinate_analysis.cpp.o
+
+test/test_real_coordinate_analysis.i: test/test_real_coordinate_analysis.cpp.i
+.PHONY : test/test_real_coordinate_analysis.i
+
+# target to preprocess a source file
+test/test_real_coordinate_analysis.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_coordinate_analysis_test.dir/build.make CMakeFiles/meshcut_real_coordinate_analysis_test.dir/test/test_real_coordinate_analysis.cpp.i
+.PHONY : test/test_real_coordinate_analysis.cpp.i
+
+test/test_real_coordinate_analysis.s: test/test_real_coordinate_analysis.cpp.s
+.PHONY : test/test_real_coordinate_analysis.s
+
+# target to generate assembly for a file
+test/test_real_coordinate_analysis.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_coordinate_analysis_test.dir/build.make CMakeFiles/meshcut_real_coordinate_analysis_test.dir/test/test_real_coordinate_analysis.cpp.s
+.PHONY : test/test_real_coordinate_analysis.cpp.s
+
+test/test_real_innsbruck_analysis.o: test/test_real_innsbruck_analysis.cpp.o
+.PHONY : test/test_real_innsbruck_analysis.o
+
+# target to build an object file
+test/test_real_innsbruck_analysis.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/build.make CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/test/test_real_innsbruck_analysis.cpp.o
+.PHONY : test/test_real_innsbruck_analysis.cpp.o
+
+test/test_real_innsbruck_analysis.i: test/test_real_innsbruck_analysis.cpp.i
+.PHONY : test/test_real_innsbruck_analysis.i
+
+# target to preprocess a source file
+test/test_real_innsbruck_analysis.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/build.make CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/test/test_real_innsbruck_analysis.cpp.i
+.PHONY : test/test_real_innsbruck_analysis.cpp.i
+
+test/test_real_innsbruck_analysis.s: test/test_real_innsbruck_analysis.cpp.s
+.PHONY : test/test_real_innsbruck_analysis.s
+
+# target to generate assembly for a file
+test/test_real_innsbruck_analysis.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/build.make CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/test/test_real_innsbruck_analysis.cpp.s
+.PHONY : test/test_real_innsbruck_analysis.cpp.s
 
 test/test_real_polygon_extraction.o: test/test_real_polygon_extraction.cpp.o
 .PHONY : test/test_real_polygon_extraction.o
@@ -395,7 +617,13 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... meshcut_advanced_test"
+	@echo "... meshcut_comprehensive_tile_suite_test"
+	@echo "... meshcut_edge_crossing_simulation_test"
+	@echo "... meshcut_edge_crossing_test"
+	@echo "... meshcut_maplibre_integration_debug_test"
 	@echo "... meshcut_performance_test"
+	@echo "... meshcut_real_coordinate_analysis_test"
+	@echo "... meshcut_real_innsbruck_analysis_test"
 	@echo "... meshcut_real_polygon_extraction_test"
 	@echo "... meshcut_spatial_comparison_test"
 	@echo "... meshcut_test"
@@ -407,9 +635,27 @@ help:
 	@echo "... test/test_basic.o"
 	@echo "... test/test_basic.i"
 	@echo "... test/test_basic.s"
+	@echo "... test/test_comprehensive_tile_suite.o"
+	@echo "... test/test_comprehensive_tile_suite.i"
+	@echo "... test/test_comprehensive_tile_suite.s"
+	@echo "... test/test_edge_crossing_polygons.o"
+	@echo "... test/test_edge_crossing_polygons.i"
+	@echo "... test/test_edge_crossing_polygons.s"
+	@echo "... test/test_edge_crossing_simulation.o"
+	@echo "... test/test_edge_crossing_simulation.i"
+	@echo "... test/test_edge_crossing_simulation.s"
+	@echo "... test/test_maplibre_integration_debug.o"
+	@echo "... test/test_maplibre_integration_debug.i"
+	@echo "... test/test_maplibre_integration_debug.s"
 	@echo "... test/test_performance.o"
 	@echo "... test/test_performance.i"
 	@echo "... test/test_performance.s"
+	@echo "... test/test_real_coordinate_analysis.o"
+	@echo "... test/test_real_coordinate_analysis.i"
+	@echo "... test/test_real_coordinate_analysis.s"
+	@echo "... test/test_real_innsbruck_analysis.o"
+	@echo "... test/test_real_innsbruck_analysis.i"
+	@echo "... test/test_real_innsbruck_analysis.s"
 	@echo "... test/test_real_polygon_extraction.o"
 	@echo "... test/test_real_polygon_extraction.i"
 	@echo "... test/test_real_polygon_extraction.s"

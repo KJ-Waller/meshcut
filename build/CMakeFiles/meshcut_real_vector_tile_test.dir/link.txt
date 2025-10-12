@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wall CMakeFiles/meshcut_real_vector_tile_test.dir/test/test_real_vector_tile.cpp.o -o meshcut_real_vector_tile_test  -lcurl /usr/lib/x86_64-linux-gnu/libz.so

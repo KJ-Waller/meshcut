@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1350" height="772.067" viewBox="0 0 1350 772.067">
+<rect width="100%" height="100%" fill="white"/>
+<text x="350" y="50" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold">Earcut (MapLibre Default)</text>
+<g stroke="#ff0000" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.8">
+<line x1="102.666" y1="100" x2="102.666" y2="672.067"/>
+<line x1="622.727" y1="100" x2="622.727" y2="672.067"/>
+<line x1="50" y1="646.064" x2="650" y2="646.064"/>
+<line x1="50" y1="126.003" x2="650" y2="126.003"/>
+</g>
+<text x="102.666" y="125.394" font-family="Arial" font-size="12" fill="red">Tile Edge (0)</text>
+<text x="622.727" y="125.394" font-family="Arial" font-size="12" fill="red">Tile Edge (4096)</text>
+<polygon points="77.2727,455.612 204.241,468.309 216.938,379.431 178.847,366.734 89.9695,417.522 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="none" stroke="#FF5722" stroke-width="0.5" opacity="0.7">
+<polygon points="178.847,366.734 89.9695,417.522 77.2727,455.612"/>
+<polygon points="77.2727,455.612 204.241,468.309 216.938,379.431"/>
+<polygon points="216.938,379.431 178.847,366.734 77.2727,455.612"/>
+</g>
+<text x="60" y="722.067" font-family="Arial" font-size="12" fill="#666">Earcut: 3 triangles</text>
+<text x="1025" y="50" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold">MeshCut (Terrain-Aware)</text>
+<g stroke="#ff0000" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.8">
+<line x1="777.666" y1="100" x2="777.666" y2="672.067"/>
+<line x1="1297.73" y1="100" x2="1297.73" y2="672.067"/>
+<line x1="725" y1="646.064" x2="1325" y2="646.064"/>
+<line x1="725" y1="126.003" x2="1325" y2="126.003"/>
+</g>
+<text x="777.666" y="125.394" font-family="Arial" font-size="12" fill="red">Tile Edge (0)</text>
+<text x="1297.73" y="125.394" font-family="Arial" font-size="12" fill="red">Tile Edge (4096)</text>
+<polygon points="752.273,455.612 879.241,468.309 891.938,379.431 853.847,366.734 764.97,417.522 " fill="#4CAF50" fill-opacity="0.2" stroke="#4CAF50" stroke-width="2"/>
+<g fill="none" stroke="#2196F3" stroke-width="0.5" opacity="0.7">
+<polygon points="777.666,458.151 777.666,451.041 753.796,451.041"/>
+<polygon points="753.796,451.041 752.273,455.612 777.666,458.151"/>
+<polygon points="842.674,464.652 842.674,451.041 777.666,451.041"/>
+<polygon points="777.666,451.041 777.666,458.151 842.674,464.652"/>
+<polygon points="879.241,468.309 881.708,451.041 842.674,451.041"/>
+<polygon points="842.674,451.041 842.674,464.652 879.241,468.309"/>
+<polygon points="777.666,410.266 764.97,417.522 753.796,451.041"/>
+<polygon points="753.796,451.041 777.666,451.041 777.666,410.266"/>
+<polygon points="820.074,386.034 777.666,410.266 777.666,451.041"/>
+<polygon points="777.666,451.041 842.674,451.041 842.674,386.034"/>
+<polygon points="842.674,386.034 820.074,386.034 777.666,451.041"/>
+<polygon points="881.708,451.041 890.994,386.034 842.674,386.034"/>
+<polygon points="842.674,386.034 842.674,451.041 881.708,451.041"/>
+<polygon points="842.674,373.119 820.074,386.034 842.674,386.034"/>
+<polygon points="853.847,366.734 842.674,373.119 842.674,386.034"/>
+<polygon points="842.674,386.034 890.994,386.034 891.938,379.431"/>
+<polygon points="891.938,379.431 853.847,366.734 842.674,386.034"/>
+</g>
+<text x="735" y="722.067" font-family="Arial" font-size="12" fill="#666">MeshCut: 17 triangles</text>
+</svg>

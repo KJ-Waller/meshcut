@@ -59,4 +59,10 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/meshcut_spatial_comparison_test.dir/DependInfo.cmake"
   "CMakeFiles/meshcut_visualization_complex_test.dir/DependInfo.cmake"
   "CMakeFiles/meshcut_real_polygon_extraction_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_edge_crossing_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_maplibre_integration_debug_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_edge_crossing_simulation_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_real_coordinate_analysis_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_real_innsbruck_analysis_test.dir/DependInfo.cmake"
+  "CMakeFiles/meshcut_comprehensive_tile_suite_test.dir/DependInfo.cmake"
   )

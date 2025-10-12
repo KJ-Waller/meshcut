@@ -61,6 +61,30 @@ add_executable(meshcut_real_polygon_extraction_test
     test/test_real_polygon_extraction.cpp
 )
 
+add_executable(meshcut_edge_crossing_test
+    test/test_edge_crossing_polygons.cpp
+)
+
+add_executable(meshcut_maplibre_integration_debug_test
+    test/test_maplibre_integration_debug.cpp
+)
+
+add_executable(meshcut_edge_crossing_simulation_test
+    test/test_edge_crossing_simulation.cpp
+)
+
+add_executable(meshcut_real_coordinate_analysis_test
+    test/test_real_coordinate_analysis.cpp
+)
+
+add_executable(meshcut_real_innsbruck_analysis_test
+    test/test_real_innsbruck_analysis.cpp
+)
+
+add_executable(meshcut_comprehensive_tile_suite_test
+    test/test_comprehensive_tile_suite.cpp
+)
+
 target_link_libraries(meshcut_test meshcut)
 target_link_libraries(meshcut_advanced_test meshcut)
 target_link_libraries(meshcut_visualization_test meshcut)
@@ -68,10 +92,26 @@ target_link_libraries(meshcut_performance_test meshcut)
 target_link_libraries(meshcut_spatial_comparison_test meshcut)
 target_link_libraries(meshcut_visualization_complex_test meshcut)
 target_link_libraries(meshcut_real_polygon_extraction_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(meshcut_edge_crossing_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(meshcut_maplibre_integration_debug_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(meshcut_edge_crossing_simulation_test meshcut)
+target_link_libraries(meshcut_real_coordinate_analysis_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(meshcut_real_innsbruck_analysis_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries(meshcut_comprehensive_tile_suite_test meshcut ${CURL_LIBRARIES} ${ZLIB_LIBRARIES})
 
-# Include curl headers for real polygon extraction test
+# Include curl headers for real polygon extraction tests
 target_include_directories(meshcut_real_polygon_extraction_test PRIVATE ${CURL_INCLUDE_DIRS})
 target_compile_options(meshcut_real_polygon_extraction_test PRIVATE ${CURL_CFLAGS_OTHER})
+target_include_directories(meshcut_edge_crossing_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_edge_crossing_test PRIVATE ${CURL_CFLAGS_OTHER})
+target_include_directories(meshcut_maplibre_integration_debug_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_maplibre_integration_debug_test PRIVATE ${CURL_CFLAGS_OTHER})
+target_include_directories(meshcut_real_coordinate_analysis_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_real_coordinate_analysis_test PRIVATE ${CURL_CFLAGS_OTHER})
+target_include_directories(meshcut_real_innsbruck_analysis_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_real_innsbruck_analysis_test PRIVATE ${CURL_CFLAGS_OTHER})
+target_include_directories(meshcut_comprehensive_tile_suite_test PRIVATE ${CURL_INCLUDE_DIRS})
+target_compile_options(meshcut_comprehensive_tile_suite_test PRIVATE ${CURL_CFLAGS_OTHER})
 
 # Enable testing
 enable_testing()
