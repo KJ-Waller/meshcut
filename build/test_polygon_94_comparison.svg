@@ -86,7 +86,7 @@
 <line x1="962.811" y1="862.989" x2="1737.19" y2="862.989"/>
 <line x1="962.811" y1="887.189" x2="1737.19" y2="887.189"/>
 </g>
-<polygon points="1705.34,210.142 1720.46,215.48 1716.9,224.377 1705.34,210.142 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
+<path d="M 1705.34 210.142 L 1720.46 215.48 L 1716.9 224.377 L 1705.34 210.142 Z " fill="#4CAF50" fill-opacity="0.3" fill-rule="evenodd" stroke="#4CAF50" stroke-width="1.5"/>
 <g fill="none" stroke="#2196F3" stroke-width="0.4" opacity="0.7">
 <polygon points="1712.99,219.559 1705.34,210.142 1712.99,212.843"/>
 <polygon points="1716.9,224.377 1712.99,219.559 1712.99,212.843"/>

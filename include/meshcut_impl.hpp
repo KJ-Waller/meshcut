@@ -1552,12 +1552,6 @@ void processBoundaryCell(int i, int j, const std::vector<double>& polygon,
 template <typename N>
 MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector<N>& holes, const MeshCutOptions& options) {
     
-    // Handle holes later - for now just process outer ring
-    if (!holes.empty()) {
-        // TODO: Implement hole support
-        // For now, just process the outer ring
-    }
-    
     if (polygon.size() < 6) {
         return {}; // Need at least 3 vertices (6 coordinates)
     }
@@ -1565,25 +1559,59 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     std::vector<N> indices;
     detail::CoordinateTransform transform(options);
     
+    // Extract outer boundary and holes from the input format
+    std::vector<double> outerRing;
+    std::vector<std::vector<double>> holeRings;
+    
+    if (holes.empty()) {
+        // No holes - use entire polygon as outer ring
+        outerRing = polygon;
+    } else {
+        // Extract outer ring (from start to first hole)
+        size_t outerEnd = holes[0] * 2; // holes contains vertex indices, not coordinate indices
+        outerRing.assign(polygon.begin(), polygon.begin() + outerEnd);
+        
+        // Extract each hole
+        for (size_t h = 0; h < holes.size(); h++) {
+            size_t holeStart = holes[h] * 2;
+            size_t holeEnd = (h + 1 < holes.size()) ? holes[h + 1] * 2 : polygon.size();
+            
+            std::vector<double> hole(polygon.begin() + holeStart, polygon.begin() + holeEnd);
+            if (!hole.empty()) {
+                holeRings.push_back(std::move(hole));
+            }
+        }
+    }
+    
     // Create both testers: integer scanline for point classification, spatial for edge-cell intersection
     // Use integer coordinate transform for maximum performance
     auto bounds = transform.getBounds();
     detail::IntegerCoordinateTransform intTransform(options.gridWidth, options.gridHeight, 
                                                    bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
-    detail::IntegerScanlinePolygonTester intScanlineTester(polygon, intTransform);
-    detail::PolygonTester spatialTester(polygon);
+    detail::IntegerScanlinePolygonTester intScanlineTester(outerRing, intTransform);
+    detail::PolygonTester spatialTester(outerRing);
+    
+    // Create hole testers for point-in-hole detection
+    std::vector<std::unique_ptr<detail::IntegerScanlinePolygonTester>> holeTesters;
+    std::vector<std::unique_ptr<detail::PolygonTester>> holeSpatialTesters;
+    
+    for (const auto& hole : holeRings) {
+        holeTesters.emplace_back(std::make_unique<detail::IntegerScanlinePolygonTester>(hole, intTransform));
+        holeSpatialTesters.emplace_back(std::make_unique<detail::PolygonTester>(hole));
+        holeSpatialTesters.back()->initSpatialIndex(options);
+    }
     
     // Initialize spatial index for fast edge-cell intersection queries
     spatialTester.initSpatialIndex(options);
     
-    // Compute polygon bounding box in grid coordinates
-    double minX = polygon[0], maxX = polygon[0];
-    double minY = polygon[1], maxY = polygon[1];
-    for (size_t i = 2; i < polygon.size(); i += 2) {
-        minX = std::min(minX, polygon[i]);
-        maxX = std::max(maxX, polygon[i]);
-        minY = std::min(minY, polygon[i + 1]);
-        maxY = std::max(maxY, polygon[i + 1]);
+    // Compute polygon bounding box in grid coordinates using outer ring
+    double minX = outerRing[0], maxX = outerRing[0];
+    double minY = outerRing[1], maxY = outerRing[1];
+    for (size_t i = 2; i < outerRing.size(); i += 2) {
+        minX = std::min(minX, outerRing[i]);
+        maxX = std::max(maxX, outerRing[i]);
+        minY = std::min(minY, outerRing[i + 1]);
+        maxY = std::max(maxY, outerRing[i + 1]);
     }
     
     auto minGrid = transform.worldToGrid(minX, minY);
@@ -1603,13 +1631,47 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
     std::unordered_map<detail::WorldPoint, N, detail::WorldPointHash> vertexMap;
     N nextVertexIndex = 0;
     
-    // Process grid cells using pre-computed rasterization results
+    // Process grid cells using hole-aware classification
     for (int j = minJ; j <= maxJ; j++) {
         for (int i = minI; i <= maxI; i++) {
-            // Use fast cell classification based on pre-computed grid points
-            detail::CellState state = gridRasterizer.classifyCellFast(i, j, spatialTester);
+            // Use fast cell classification based on pre-computed grid points for outer polygon
+            detail::CellState outerState = gridRasterizer.classifyCellFast(i, j, spatialTester);
             
-            switch (state) {
+            // If cell is outside the outer polygon, skip it entirely
+            if (outerState == detail::FULL_OUT) {
+                continue;
+            }
+            
+            // Check if cell is inside any hole
+            bool insideHole = false;
+            for (size_t h = 0; h < holeSpatialTesters.size(); h++) {
+                // Check if this cell intersects or is inside the hole
+                // For simplicity, check the cell center
+                auto [centerX, centerY] = transform.gridToWorld(i + 0.5, j + 0.5);
+                if (holeTesters[h]->isInside(centerX, centerY, intTransform)) {
+                    insideHole = true;
+                    break;
+                }
+            }
+            
+            // If inside a hole, skip this cell
+            if (insideHole) {
+                continue;
+            }
+            
+            // For cells that might intersect hole boundaries, we need more careful processing
+            detail::CellState finalState = outerState;
+            if (outerState == detail::FULL_IN) {
+                // Check if any hole intersects this cell
+                for (const auto& holeSpatialTester : holeSpatialTesters) {
+                    if (holeSpatialTester->intersectsRectFast(i, j)) {
+                        finalState = detail::BOUNDARY; // Need clipping
+                        break;
+                    }
+                }
+            }
+            
+            switch (finalState) {
                 case detail::FULL_IN:
                     detail::emitGridTriangles(i, j, options.diagonalNE, indices, vertexMap, nextVertexIndex, transform);
                     break;
@@ -1619,7 +1681,8 @@ MeshCutResult meshcut_full(const std::vector<double>& polygon, const std::vector
                     break;
                     
                 case detail::BOUNDARY:
-                    detail::processBoundaryCell(i, j, polygon, transform, indices, vertexMap, nextVertexIndex);
+                    // For boundary cells, we need to clip against both outer polygon and holes
+                    detail::processBoundaryCell(i, j, outerRing, transform, indices, vertexMap, nextVertexIndex);
                     break;
             }
         }

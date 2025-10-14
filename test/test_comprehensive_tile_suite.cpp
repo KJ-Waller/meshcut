@@ -159,6 +159,35 @@ public:
             return coords;
         }
         
+        // Get coordinates and hole indices for MeshCut (earcut-compatible format)
+        std::pair<std::vector<double>, std::vector<uint32_t>> toMeshCutFormat() const {
+            std::vector<double> coords;
+            std::vector<uint32_t> holes;
+            
+            uint32_t vertexIndex = 0;
+            
+            // Add outer ring
+            if (!rings.empty()) {
+                for (const auto& pt : rings[0]) {
+                    coords.push_back(pt.x);
+                    coords.push_back(pt.y);
+                    vertexIndex++;
+                }
+                
+                // Add holes
+                for (size_t i = 1; i < rings.size(); i++) {
+                    holes.push_back(vertexIndex); // Start index of this hole
+                    for (const auto& pt : rings[i]) {
+                        coords.push_back(pt.x);
+                        coords.push_back(pt.y);
+                        vertexIndex++;
+                    }
+                }
+            }
+            
+            return {std::move(coords), std::move(holes)};
+        }
+        
         void printInfo() const {
             if (rings.empty() || rings[0].empty()) return;
             
@@ -774,8 +803,8 @@ int main() {
     for (size_t i = 0; i < testPolygons.size(); i++) {
         // Cycle through colors if we have more polygons than colors
         std::string color = colors[i % colors.size()];
-        combinedViz.drawPolygonWithHoles(testPolygons[i].rings, color, false, 0.15);  // Left panel (lower opacity)
-        combinedViz.drawPolygon(testPolygons[i].toFlatCoords(), color, true, 0.15);   // Right panel (MeshCut uses flattened)
+        combinedViz.drawPolygonWithHoles(testPolygons[i].rings, color, false, 0.15);  // Left panel (Earcut)
+        combinedViz.drawPolygonWithHoles(testPolygons[i].rings, color, true, 0.15);   // Right panel (MeshCut now supports holes!)
     }
     
     combinedViz.addStats("All polygons: " + std::to_string(testPolygons.size()) + " from tile", false);
@@ -793,38 +822,34 @@ int main() {
         const auto& poly = testPolygons[i];
         
         try {
-            auto coords = poly.toFlatCoords(); // For MeshCut (flattened single ring)
             auto earcutCoords = poly.toEarcutCoords(); // For Earcut visualization (proper ring order)
+            auto [meshcutCoords, meshcutHoles] = poly.toMeshCutFormat(); // For MeshCut (proper hole support)
             
             std::cout << "Testing Polygon " << poly.id << " (" << poly.layerName << ")...\n";
             
             // Test with Earcut (properly handling holes)
             auto earcutPolygon = poly.toEarcutFormat();
             
-            // Debug output for polygon 202 Earcut input
+            // Debug output for polygon 202 inputs
             if (poly.id == 202) {
-                std::cout << "\n=== EARCUT INPUT DEBUG ===\n";
+                std::cout << "\n=== POLYGON 202 INPUT DEBUG ===\n";
                 std::cout << "Earcut polygon rings: " << earcutPolygon.size() << "\n";
-                for (size_t i = 0; i < earcutPolygon.size(); i++) {
-                    std::cout << "Ring " << i << " (" << (i == 0 ? "outer" : "hole") << "): " << earcutPolygon[i].size() << " points\n";
-                    if (!earcutPolygon[i].empty()) {
-                        std::cout << "  First 3 points: ";
-                        for (size_t j = 0; j < std::min(3UL, earcutPolygon[i].size()); j++) {
-                            std::cout << "(" << earcutPolygon[i][j][0] << ", " << earcutPolygon[i][j][1] << ") ";
-                        }
-                        std::cout << "\n";
-                    }
+                std::cout << "MeshCut coords: " << meshcutCoords.size()/2 << " vertices, holes at indices: [";
+                for (size_t i = 0; i < meshcutHoles.size(); i++) {
+                    std::cout << meshcutHoles[i];
+                    if (i < meshcutHoles.size() - 1) std::cout << ", ";
                 }
-                std::cout << "=== END EARCUT INPUT DEBUG ===\n\n";
+                std::cout << "]\n";
+                std::cout << "=== END INPUT DEBUG ===\n\n";
             }
             
             auto earcutResult = mapbox::earcut<uint32_t>(earcutPolygon);
             
-            // Test with MeshCut
-            auto meshcutResult = meshcut::meshcut_full(coords, {}, meshcutOptions);
+            // Test with MeshCut (now with proper hole support)
+            auto meshcutResult = meshcut::meshcut_full(meshcutCoords, meshcutHoles, meshcutOptions);
             
             std::cout << "  Earcut: " << earcutCoords.size()/2 << " vertices → " << earcutResult.size()/3 << " triangles\n";
-            std::cout << "  MeshCut: " << coords.size()/2 << " input vertices → " 
+            std::cout << "  MeshCut: " << meshcutCoords.size()/2 << " input vertices → " 
                       << meshcutResult.vertices.size()/2 << " output vertices → " 
                       << meshcutResult.indices.size()/3 << " triangles\n";
             
@@ -846,7 +871,7 @@ int main() {
             viz.addPanelTitle("MeshCut (Terrain-Aware)", true);
             viz.drawTileBoundary(true);
             viz.drawGrid(32, true);
-            viz.drawPolygon(coords, "#4CAF50", true, 0.3);  // MeshCut still uses flattened input
+            viz.drawPolygonWithHoles(poly.rings, "#4CAF50", true, 0.3);  // MeshCut now supports holes!
             
             // Convert MeshCut result for visualization
             std::vector<std::pair<double, double>> meshVertices;
