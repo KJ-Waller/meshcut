@@ -8,19 +8,11 @@
 <rect x="85.5872" y="864.413" width="728.826" height="-728.826"/>
 </g>
 <text x="450" y="126.69" text-anchor="middle" font-family="Arial" font-size="11" fill="red">Tile Boundary (0-4096)</text>
-<polygon points="806.94,269.395 810.498,269.573 804.982,273.843 799.288,270.641 795.73,265.302 791.637,261.744 795.552,251.423 808.541,252.669 820.285,257.473 823.488,264.769 815.302,262.989 806.94,269.395 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
+<path d="M 805.338 210.142 L 820.463 215.48 L 816.904 224.377 L 805.338 210.142 Z " fill="#4CAF50" fill-opacity="0.3" fill-rule="evenodd" stroke="#4CAF50" stroke-width="1.5"/>
 <g fill="none" stroke="#FF5722" stroke-width="0.4" opacity="0.7">
-<polygon points="806.94,269.395 810.498,269.573 804.982,273.843"/>
-<polygon points="804.982,273.843 799.288,270.641 795.73,265.302"/>
-<polygon points="795.73,265.302 791.637,261.744 795.552,251.423"/>
-<polygon points="795.552,251.423 808.541,252.669 820.285,257.473"/>
-<polygon points="820.285,257.473 823.488,264.769 815.302,262.989"/>
-<polygon points="806.94,269.395 804.982,273.843 795.73,265.302"/>
-<polygon points="795.73,265.302 795.552,251.423 820.285,257.473"/>
-<polygon points="820.285,257.473 815.302,262.989 806.94,269.395"/>
-<polygon points="806.94,269.395 795.73,265.302 820.285,257.473"/>
+<polygon points="816.904,224.377 805.338,210.142 820.463,215.48"/>
 </g>
-<text x="60" y="950" font-family="Arial" font-size="12" fill="#666">Earcut: 9 triangles</text>
+<text x="60" y="950" font-family="Arial" font-size="12" fill="#666">Earcut: 1 triangles</text>
 <text x="1350" y="90" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">MeshCut (Terrain-Aware)</text>
 <g stroke="#ff0000" stroke-width="2" fill="none" opacity="0.8">
 <rect x="985.587" y="864.413" width="728.826" height="-728.826"/>
@@ -94,23 +86,11 @@
 <line x1="962.811" y1="862.989" x2="1737.19" y2="862.989"/>
 <line x1="962.811" y1="887.189" x2="1737.19" y2="887.189"/>
 </g>
-<polygon points="1706.94,269.395 1710.5,269.573 1704.98,273.843 1699.29,270.641 1695.73,265.302 1691.64,261.744 1695.55,251.423 1708.54,252.669 1720.28,257.473 1723.49,264.769 1715.3,262.989 1706.94,269.395 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
+<polygon points="1705.34,210.142 1720.46,215.48 1716.9,224.377 1705.34,210.142 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
 <g fill="none" stroke="#2196F3" stroke-width="0.4" opacity="0.7">
-<polygon points="1712.99,254.489 1712.99,258.007 1693.05,258.007"/>
-<polygon points="1693.05,258.007 1695.55,251.423 1708.54,252.669"/>
-<polygon points="1708.54,252.669 1712.99,254.489 1693.05,258.007"/>
-<polygon points="1720.28,257.473 1720.52,258.007 1712.99,258.007"/>
-<polygon points="1712.99,258.007 1712.99,254.489 1720.28,257.473"/>
-<polygon points="1706.94,269.395 1710.5,269.573 1704.98,273.843"/>
-<polygon points="1704.98,273.843 1699.29,270.641 1695.73,265.302"/>
-<polygon points="1695.73,265.302 1691.64,261.744 1693.05,258.007"/>
-<polygon points="1693.05,258.007 1712.99,258.007 1712.99,264.761"/>
-<polygon points="1706.94,269.395 1704.98,273.843 1695.73,265.302"/>
-<polygon points="1695.73,265.302 1693.05,258.007 1712.99,264.761"/>
-<polygon points="1712.99,264.761 1706.94,269.395 1695.73,265.302"/>
-<polygon points="1715.3,262.989 1712.99,264.761 1712.99,258.007"/>
-<polygon points="1712.99,258.007 1720.52,258.007 1723.49,264.769"/>
-<polygon points="1723.49,264.769 1715.3,262.989 1712.99,258.007"/>
+<polygon points="1712.99,219.559 1705.34,210.142 1712.99,212.843"/>
+<polygon points="1716.9,224.377 1712.99,219.559 1712.99,212.843"/>
+<polygon points="1712.99,212.843 1720.46,215.48 1716.9,224.377"/>
 </g>
-<text x="960" y="950" font-family="Arial" font-size="12" fill="#666">MeshCut: 15 triangles, 16 vertices</text>
+<text x="960" y="950" font-family="Arial" font-size="12" fill="#666">MeshCut: 3 triangles, 5 vertices</text>
 </svg>

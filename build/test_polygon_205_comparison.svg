@@ -8,15 +8,12 @@
 <rect x="85.5872" y="864.413" width="728.826" height="-728.826"/>
 </g>
 <text x="450" y="126.69" text-anchor="middle" font-family="Arial" font-size="11" fill="red">Tile Boundary (0-4096)</text>
-<polygon points="579.537,836.121 585.587,839.68 596.619,839.502 600,846.619 609.253,851.068 621.174,861.032 631.673,875.801 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
+<path d="M 397.331 842.883 L 393.95 846.797 L 391.103 844.306 L 394.484 840.391 L 397.331 842.883 Z " fill="#4CAF50" fill-opacity="0.3" fill-rule="evenodd" stroke="#4CAF50" stroke-width="1.5"/>
 <g fill="none" stroke="#FF5722" stroke-width="0.4" opacity="0.7">
-<polygon points="621.174,861.032 631.673,875.801 579.537,836.121"/>
-<polygon points="585.587,839.68 596.619,839.502 600,846.619"/>
-<polygon points="600,846.619 609.253,851.068 621.174,861.032"/>
-<polygon points="621.174,861.032 579.537,836.121 585.587,839.68"/>
-<polygon points="585.587,839.68 600,846.619 621.174,861.032"/>
+<polygon points="394.484,840.391 397.331,842.883 393.95,846.797"/>
+<polygon points="393.95,846.797 391.103,844.306 394.484,840.391"/>
 </g>
-<text x="60" y="950" font-family="Arial" font-size="12" fill="#666">Earcut: 5 triangles</text>
+<text x="60" y="950" font-family="Arial" font-size="12" fill="#666">Earcut: 2 triangles</text>
 <text x="1350" y="90" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">MeshCut (Terrain-Aware)</text>
 <g stroke="#ff0000" stroke-width="2" fill="none" opacity="0.8">
 <rect x="985.587" y="864.413" width="728.826" height="-728.826"/>
@@ -90,23 +87,10 @@
 <line x1="962.811" y1="862.989" x2="1737.19" y2="862.989"/>
 <line x1="962.811" y1="887.189" x2="1737.19" y2="887.189"/>
 </g>
-<polygon points="1479.54,836.121 1485.59,839.68 1496.62,839.502 1500,846.619 1509.25,851.068 1521.17,861.032 1531.67,875.801 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
+<polygon points="1297.33,842.883 1293.95,846.797 1291.1,844.306 1294.48,840.391 1297.33,842.883 " fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-width="1.5"/>
 <g fill="none" stroke="#2196F3" stroke-width="0.4" opacity="0.7">
-<polygon points="1479.54,836.121 1484.07,838.79 1483.04,838.79"/>
-<polygon points="1485.59,839.68 1495.2,839.525 1495.2,848.038"/>
-<polygon points="1495.2,848.038 1483.04,838.79 1484.07,838.79"/>
-<polygon points="1484.07,838.79 1485.59,839.68 1495.2,848.038"/>
-<polygon points="1509.25,851.068 1519.4,859.545 1519.4,862.989"/>
-<polygon points="1519.4,862.989 1514.84,862.989 1495.2,848.038"/>
-<polygon points="1495.2,848.038 1495.2,839.525 1496.62,839.502"/>
-<polygon points="1500,846.619 1509.25,851.068 1519.4,862.989"/>
-<polygon points="1495.2,848.038 1496.62,839.502 1500,846.619"/>
-<polygon points="1500,846.619 1519.4,862.989 1495.2,848.038"/>
-<polygon points="1521.17,861.032 1522.57,862.989 1519.4,862.989"/>
-<polygon points="1519.4,862.989 1519.4,859.545 1521.17,861.032"/>
-<polygon points="1519.4,866.456 1514.84,862.989 1519.4,862.989"/>
-<polygon points="1522.57,862.989 1531.67,875.801 1519.4,866.456"/>
-<polygon points="1519.4,866.456 1519.4,862.989 1522.57,862.989"/>
+<polygon points="1294.48,840.391 1297.33,842.883 1293.95,846.797"/>
+<polygon points="1293.95,846.797 1291.1,844.306 1294.48,840.391"/>
 </g>
-<text x="960" y="950" font-family="Arial" font-size="12" fill="#666">MeshCut: 15 triangles, 16 vertices</text>
+<text x="960" y="950" font-family="Arial" font-size="12" fill="#666">MeshCut: 2 triangles, 4 vertices</text>
 </svg>

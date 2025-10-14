@@ -118,36 +118,72 @@ public:
     };
     
     struct TestPolygon {
-        std::vector<Point> points;
+        std::vector<std::vector<Point>> rings;  // First ring = outer boundary, rest = holes
         std::string layerName;
         TileInfo tile;
         int id;
         
+        // Get all points from all rings as a flat coordinate array (for MeshCut compatibility)
         std::vector<double> toFlatCoords() const {
             std::vector<double> coords;
-            coords.reserve(points.size() * 2);
-            for (const auto& pt : points) {
-                coords.push_back(pt.x);
-                coords.push_back(pt.y);
+            for (const auto& ring : rings) {
+                for (const auto& pt : ring) {
+                    coords.push_back(pt.x);
+                    coords.push_back(pt.y);
+                }
+            }
+            return coords;
+        }
+        
+        // Get rings in Earcut-compatible format
+        std::vector<std::vector<std::array<double, 2>>> toEarcutFormat() const {
+            std::vector<std::vector<std::array<double, 2>>> earcutPolygon;
+            for (const auto& ring : rings) {
+                earcutPolygon.push_back({});
+                for (const auto& pt : ring) {
+                    earcutPolygon.back().push_back({{pt.x, pt.y}});
+                }
+            }
+            return earcutPolygon;
+        }
+        
+        // Get flattened coordinates in Earcut order (for visualization of Earcut results)
+        std::vector<double> toEarcutCoords() const {
+            std::vector<double> coords;
+            for (const auto& ring : rings) {
+                for (const auto& pt : ring) {
+                    coords.push_back(pt.x);
+                    coords.push_back(pt.y);
+                }
             }
             return coords;
         }
         
         void printInfo() const {
-            if (points.empty()) return;
+            if (rings.empty() || rings[0].empty()) return;
             
-            double minX = points[0].x, maxX = points[0].x;
-            double minY = points[0].y, maxY = points[0].y;
+            double minX = rings[0][0].x, maxX = rings[0][0].x;
+            double minY = rings[0][0].y, maxY = rings[0][0].y;
             
-            for (const auto& pt : points) {
-                minX = std::min(minX, pt.x);
-                maxX = std::max(maxX, pt.x);
-                minY = std::min(minY, pt.y);
-                maxY = std::max(maxY, pt.y);
+            for (const auto& ring : rings) {
+                for (const auto& pt : ring) {
+                    minX = std::min(minX, pt.x);
+                    maxX = std::max(maxX, pt.x);
+                    minY = std::min(minY, pt.y);
+                    maxY = std::max(maxY, pt.y);
+                }
+            }
+            
+            int totalVertices = 0;
+            for (const auto& ring : rings) {
+                totalVertices += ring.size();
             }
             
             std::cout << "Polygon " << id << " (" << layerName << "):\n";
-            std::cout << "  Vertices: " << points.size() << "\n";
+            std::cout << "  Rings: " << rings.size() << " (1 outer";
+            if (rings.size() > 1) std::cout << ", " << (rings.size() - 1) << " holes";
+            std::cout << ")\n";
+            std::cout << "  Total vertices: " << totalVertices << "\n";
             std::cout << "  Bounds: (" << minX << "," << minY << ") to (" << maxX << "," << maxY << ")\n";
             
             bool extendsOutside = (minX < 0 || maxX > tile.extent || minY < 0 || maxY > tile.extent);
@@ -163,7 +199,61 @@ public:
             }
             
             double coverage = ((maxX - minX) * (maxY - minY)) / (tile.extent * tile.extent) * 100.0;
-            std::cout << "  Tile coverage: " << std::fixed << std::setprecision(1) << coverage << "%\n\n";
+            std::cout << "  Tile coverage: " << std::fixed << std::setprecision(1) << coverage << "%\n";
+            
+            // Debug output for polygon 202
+            if (id == 202) {
+                std::cout << "\n=== DETAILED POLYGON 202 ANALYSIS ===\n";
+                for (size_t i = 0; i < rings.size(); i++) {
+                    const auto& ring = rings[i];
+                    std::cout << "Ring " << i << " (" << (i == 0 ? "outer" : "hole") << "):\n";
+                    std::cout << "  Vertices: " << ring.size() << "\n";
+                    
+                    if (!ring.empty()) {
+                        std::cout << "  First: (" << ring[0].x << ", " << ring[0].y << ")\n";
+                        std::cout << "  Last: (" << ring.back().x << ", " << ring.back().y << ")\n";
+                        
+                        // Calculate winding order (shoelace formula)
+                        double area = 0.0;
+                        for (size_t j = 0; j < ring.size(); j++) {
+                            size_t next = (j + 1) % ring.size();
+                            area += (ring[next].x - ring[j].x) * (ring[next].y + ring[j].y);
+                        }
+                        bool clockwise = area > 0;
+                        std::cout << "  Winding: " << (clockwise ? "CLOCKWISE" : "COUNTER-CLOCKWISE") << " (area: " << area << ")\n";
+                        
+                        // For holes, check if they're actually inside the outer ring
+                        if (i > 0 && !rings[0].empty()) {
+                            // Simple point-in-polygon test for first point of hole
+                            auto& pt = ring[0];
+                            int crossings = 0;
+                            const auto& outer = rings[0];
+                            for (size_t j = 0; j < outer.size() - 1; j++) {
+                                if (((outer[j].y <= pt.y) && (pt.y < outer[j+1].y)) ||
+                                    ((outer[j+1].y <= pt.y) && (pt.y < outer[j].y))) {
+                                    double intersectX = outer[j].x + (pt.y - outer[j].y) * (outer[j+1].x - outer[j].x) / (outer[j+1].y - outer[j].y);
+                                    if (pt.x < intersectX) crossings++;
+                                }
+                            }
+                            bool inside = (crossings % 2) == 1;
+                            std::cout << "  Inside outer ring: " << (inside ? "YES" : "NO") << " (crossings: " << crossings << ")\n";
+                        }
+                        
+                        // Print first few and last few points to see if there are connections
+                        std::cout << "  All points: ";
+                        for (size_t j = 0; j < std::min(ring.size(), 20UL); j++) {
+                            std::cout << "(" << ring[j].x << ", " << ring[j].y << ")";
+                            if (j < std::min(ring.size(), 20UL) - 1) std::cout << " -> ";
+                        }
+                        if (ring.size() > 20) std::cout << " ... [" << (ring.size() - 20) << " more]";
+                        std::cout << "\n";
+                    }
+                    std::cout << "\n";
+                }
+                std::cout << "=== END POLYGON 202 ANALYSIS ===\n\n";
+            }
+            
+            std::cout << "\n";
         }
     };
     
@@ -235,6 +325,8 @@ private:
         std::vector<std::string> values;
         std::string layerName = "unknown";
         
+        int pointCount = 0, lineCount = 0, polygonCount = 0, unknownCount = 0;
+        
         while (pos < layerEnd && pos < size) {
             uint64_t tag = readVarint();
             uint8_t wireType = tag & 0x7;
@@ -246,8 +338,15 @@ private:
             } else if (fieldNumber == 2 && wireType == 2) { // Feature
                 uint64_t featureLength = readVarint();
                 size_t featureEnd = std::min(pos + featureLength, size);
-                auto polygon = parseFeature(featureEnd, keys, values, layerName, polygonId);
-                if (!polygon.points.empty() && polygon.points.size() >= 4) {
+                auto [polygon, geomType] = parseFeature(featureEnd, keys, values, layerName, polygonId);
+                
+                // Count geometry types
+                if (geomType == 1) pointCount++;
+                else if (geomType == 2) lineCount++;
+                else if (geomType == 3) polygonCount++;
+                else unknownCount++;
+                
+                if (!polygon.rings.empty() && !polygon.rings[0].empty() && polygon.rings[0].size() >= 4) {
                     polygons.push_back(std::move(polygon));
                     polygonId++;
                 }
@@ -264,36 +363,57 @@ private:
             }
         }
         
+        if (pointCount > 0 || lineCount > 0 || polygonCount > 0 || unknownCount > 0) {
+            std::cout << "Layer '" << layerName << "': ";
+            if (pointCount > 0) std::cout << pointCount << " points, ";
+            if (lineCount > 0) std::cout << lineCount << " lines, ";
+            if (polygonCount > 0) std::cout << polygonCount << " polygons, ";
+            if (unknownCount > 0) std::cout << unknownCount << " unknown";
+            std::cout << " -> " << polygons.size() << " extracted\n";
+        }
+        
         return polygons;
     }
     
-    TestPolygon parseFeature(size_t featureEnd, const std::vector<std::string>& keys, 
-                            const std::vector<std::string>& values, 
-                            const std::string& layerName, int id) {
+    std::pair<TestPolygon, uint32_t> parseFeature(size_t featureEnd, const std::vector<std::string>& keys, 
+                                                 const std::vector<std::string>& values, 
+                                                 const std::string& layerName, int id) {
         TestPolygon polygon;
         polygon.layerName = layerName;
         polygon.id = id;
+        
+        uint32_t geometryType = 0;  // 0=Unknown, 1=Point, 2=LineString, 3=Polygon
         
         while (pos < featureEnd && pos < size) {
             uint64_t tag = readVarint();
             uint8_t wireType = tag & 0x7;
             uint32_t fieldNumber = tag >> 3;
             
-            if (fieldNumber == 4 && wireType == 2) { // Geometry
+            if (fieldNumber == 3 && wireType == 0) { // Geometry type
+                geometryType = static_cast<uint32_t>(readVarint());
+            } else if (fieldNumber == 4 && wireType == 2) { // Geometry
                 uint64_t geomLength = readVarint();
                 size_t geomEnd = std::min(pos + geomLength, size);
-                polygon.points = parseGeometry(geomEnd);
+                
+                // Only process Polygon geometries (type 3), skip Points (1) and LineStrings (2)
+                if (geometryType == 3) {
+                    polygon.rings = parseGeometry(geomEnd);
+                } else {
+                    // Skip geometry data for non-polygon types
+                    pos = geomEnd;
+                }
                 break;
             } else {
                 skipField(wireType);
             }
         }
         
-        return polygon;
+        return std::make_pair(std::move(polygon), geometryType);
     }
     
-    std::vector<Point> parseGeometry(size_t geomEnd) {
-        std::vector<Point> points;
+    std::vector<std::vector<Point>> parseGeometry(size_t geomEnd) {
+        std::vector<std::vector<Point>> rings;
+        std::vector<Point> currentRing;
         
         int32_t x = 0, y = 0;
         bool inRing = false;
@@ -303,7 +423,13 @@ private:
             uint32_t id = command & 0x7;
             uint32_t count = command >> 3;
             
-            if (id == 1) { // MoveTo
+            if (id == 1) { // MoveTo - starts a new ring
+                // If we were in a ring, close it and add to rings
+                if (inRing && !currentRing.empty()) {
+                    rings.push_back(std::move(currentRing));
+                    currentRing.clear();
+                }
+                
                 inRing = true;
                 for (uint32_t i = 0; i < count && pos < geomEnd; i++) {
                     int32_t dx = static_cast<int32_t>(readVarint());
@@ -313,7 +439,7 @@ private:
                     x += dx;
                     y += dy;
                     
-                    points.push_back({static_cast<double>(x), static_cast<double>(y)});
+                    currentRing.push_back({static_cast<double>(x), static_cast<double>(y)});
                 }
             } else if (id == 2 && inRing) { // LineTo
                 for (uint32_t i = 0; i < count && pos < geomEnd; i++) {
@@ -324,19 +450,30 @@ private:
                     x += dx;
                     y += dy;
                     
-                    points.push_back({static_cast<double>(x), static_cast<double>(y)});
+                    currentRing.push_back({static_cast<double>(x), static_cast<double>(y)});
                 }
             } else if (id == 7) { // ClosePath
-                if (inRing && !points.empty()) {
-                    if (points.back().x != points[0].x || points.back().y != points[0].y) {
-                        points.push_back(points[0]);
+                if (inRing && !currentRing.empty()) {
+                    // Ensure ring is closed
+                    if (currentRing.back().x != currentRing[0].x || currentRing.back().y != currentRing[0].y) {
+                        currentRing.push_back(currentRing[0]);
                     }
+                    rings.push_back(std::move(currentRing));
+                    currentRing.clear();
                 }
                 inRing = false;
             }
         }
         
-        return points;
+        // Handle case where final ring wasn't closed with ClosePath
+        if (inRing && !currentRing.empty()) {
+            if (currentRing.back().x != currentRing[0].x || currentRing.back().y != currentRing[0].y) {
+                currentRing.push_back(currentRing[0]);
+            }
+            rings.push_back(std::move(currentRing));
+        }
+        
+        return rings;
     }
 };
 
@@ -354,15 +491,19 @@ public:
         tileExtent = polygons[0].tile.extent;
         
         // Calculate bounds from all polygons, expand for better visualization
-        minX = maxX = polygons[0].points[0].x;
-        minY = maxY = polygons[0].points[0].y;
+        if (!polygons[0].rings.empty() && !polygons[0].rings[0].empty()) {
+            minX = maxX = polygons[0].rings[0][0].x;
+            minY = maxY = polygons[0].rings[0][0].y;
+        }
         
         for (const auto& poly : polygons) {
-            for (const auto& pt : poly.points) {
-                minX = std::min(minX, pt.x);
-                maxX = std::max(maxX, pt.x);
-                minY = std::min(minY, pt.y);
-                maxY = std::max(maxY, pt.y);
+            for (const auto& ring : poly.rings) {
+                for (const auto& pt : ring) {
+                    minX = std::min(minX, pt.x);
+                    maxX = std::max(maxX, pt.x);
+                    minY = std::min(minY, pt.y);
+                    maxY = std::max(maxY, pt.y);
+                }
             }
         }
         
@@ -459,6 +600,40 @@ public:
         }
         file << "\" fill=\"" << color << "\" fill-opacity=\"" << opacity << "\" ";
         file << "stroke=\"" << color << "\" stroke-width=\"1.5\"/>\n";
+    }
+    
+    // Draw polygon with proper hole support using SVG path fill-rule
+    void drawPolygonWithHoles(const std::vector<std::vector<TileTestSuite::Point>>& rings, const std::string& color, bool rightPanel = false, double opacity = 0.3) {
+        if (rings.empty() || rings[0].empty()) return;
+        
+        file << "<path d=\"";
+        
+        // Draw outer ring
+        const auto& outer = rings[0];
+        auto [x0, y0] = transform(outer[0].x, outer[0].y, rightPanel);
+        file << "M " << x0 << " " << y0 << " ";
+        for (size_t i = 1; i < outer.size(); i++) {
+            auto [x, y] = transform(outer[i].x, outer[i].y, rightPanel);
+            file << "L " << x << " " << y << " ";
+        }
+        file << "Z ";
+        
+        // Draw holes
+        for (size_t r = 1; r < rings.size(); r++) {
+            const auto& hole = rings[r];
+            if (hole.empty()) continue;
+            
+            auto [hx0, hy0] = transform(hole[0].x, hole[0].y, rightPanel);
+            file << "M " << hx0 << " " << hy0 << " ";
+            for (size_t i = 1; i < hole.size(); i++) {
+                auto [hx, hy] = transform(hole[i].x, hole[i].y, rightPanel);
+                file << "L " << hx << " " << hy << " ";
+            }
+            file << "Z ";
+        }
+        
+        file << "\" fill=\"" << color << "\" fill-opacity=\"" << opacity << "\" ";
+        file << "fill-rule=\"evenodd\" stroke=\"" << color << "\" stroke-width=\"1.5\"/>\n";
     }
     
     void drawTriangulation(const std::vector<double>& coords, const std::vector<uint32_t>& indices, 
@@ -597,11 +772,10 @@ int main() {
                                       "#CDDC39", "#FF6F00", "#E91E63", "#3F51B5", "#795548"};
     
     for (size_t i = 0; i < testPolygons.size(); i++) {
-        auto coords = testPolygons[i].toFlatCoords();
         // Cycle through colors if we have more polygons than colors
         std::string color = colors[i % colors.size()];
-        combinedViz.drawPolygon(coords, color, false, 0.15);  // Left panel (lower opacity)
-        combinedViz.drawPolygon(coords, color, true, 0.15);   // Right panel (lower opacity)
+        combinedViz.drawPolygonWithHoles(testPolygons[i].rings, color, false, 0.15);  // Left panel (lower opacity)
+        combinedViz.drawPolygon(testPolygons[i].toFlatCoords(), color, true, 0.15);   // Right panel (MeshCut uses flattened)
     }
     
     combinedViz.addStats("All polygons: " + std::to_string(testPolygons.size()) + " from tile", false);
@@ -619,23 +793,37 @@ int main() {
         const auto& poly = testPolygons[i];
         
         try {
-            auto coords = poly.toFlatCoords();
+            auto coords = poly.toFlatCoords(); // For MeshCut (flattened single ring)
+            auto earcutCoords = poly.toEarcutCoords(); // For Earcut visualization (proper ring order)
             
             std::cout << "Testing Polygon " << poly.id << " (" << poly.layerName << ")...\n";
             
-            // Test with Earcut
-            using Point = std::array<double, 2>;
-            std::vector<std::vector<Point>> earcutPolygon;
-            earcutPolygon.push_back({});
-            for (size_t j = 0; j < coords.size(); j += 2) {
-                earcutPolygon[0].push_back({{coords[j], coords[j+1]}});
+            // Test with Earcut (properly handling holes)
+            auto earcutPolygon = poly.toEarcutFormat();
+            
+            // Debug output for polygon 202 Earcut input
+            if (poly.id == 202) {
+                std::cout << "\n=== EARCUT INPUT DEBUG ===\n";
+                std::cout << "Earcut polygon rings: " << earcutPolygon.size() << "\n";
+                for (size_t i = 0; i < earcutPolygon.size(); i++) {
+                    std::cout << "Ring " << i << " (" << (i == 0 ? "outer" : "hole") << "): " << earcutPolygon[i].size() << " points\n";
+                    if (!earcutPolygon[i].empty()) {
+                        std::cout << "  First 3 points: ";
+                        for (size_t j = 0; j < std::min(3UL, earcutPolygon[i].size()); j++) {
+                            std::cout << "(" << earcutPolygon[i][j][0] << ", " << earcutPolygon[i][j][1] << ") ";
+                        }
+                        std::cout << "\n";
+                    }
+                }
+                std::cout << "=== END EARCUT INPUT DEBUG ===\n\n";
             }
+            
             auto earcutResult = mapbox::earcut<uint32_t>(earcutPolygon);
             
             // Test with MeshCut
             auto meshcutResult = meshcut::meshcut_full(coords, {}, meshcutOptions);
             
-            std::cout << "  Earcut: " << coords.size()/2 << " vertices → " << earcutResult.size()/3 << " triangles\n";
+            std::cout << "  Earcut: " << earcutCoords.size()/2 << " vertices → " << earcutResult.size()/3 << " triangles\n";
             std::cout << "  MeshCut: " << coords.size()/2 << " input vertices → " 
                       << meshcutResult.vertices.size()/2 << " output vertices → " 
                       << meshcutResult.indices.size()/3 << " triangles\n";
@@ -650,15 +838,15 @@ int main() {
             // Left panel: Earcut
             viz.addPanelTitle("Earcut (Current MapLibre)", false);
             viz.drawTileBoundary(false);
-            viz.drawPolygon(coords, "#4CAF50", false, 0.3);
-            viz.drawTriangulation(coords, earcutResult, "#FF5722", false);
+            viz.drawPolygonWithHoles(poly.rings, "#4CAF50", false, 0.3);
+            viz.drawTriangulation(earcutCoords, earcutResult, "#FF5722", false);
             viz.addStats("Earcut: " + std::to_string(earcutResult.size()/3) + " triangles", false);
             
             // Right panel: MeshCut
             viz.addPanelTitle("MeshCut (Terrain-Aware)", true);
             viz.drawTileBoundary(true);
             viz.drawGrid(32, true);
-            viz.drawPolygon(coords, "#4CAF50", true, 0.3);
+            viz.drawPolygon(coords, "#4CAF50", true, 0.3);  // MeshCut still uses flattened input
             
             // Convert MeshCut result for visualization
             std::vector<std::pair<double, double>> meshVertices;
